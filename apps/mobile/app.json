@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Dairy Delivery",
+    "slug": "dairy-delivery",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F6F2E8"
+    },
+    "assetBundlePatterns": ["**/*"]
+  }
+}

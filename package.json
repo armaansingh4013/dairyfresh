@@ -1,0 +1,32 @@
+{
+  "name": "dairy-delivery-platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm -w apps/api run dev\" \"npm -w apps/web run dev\" \"npm -w apps/admin run dev\" \"npm -w apps/mobile run start\"",
+    "dev:api": "npm -w apps/api run dev",
+    "dev:web": "npm -w apps/web run dev",
+    "dev:admin": "npm -w apps/admin run dev",
+    "dev:mobile": "npm -w apps/mobile run start",
+    "bootstrap": "node scripts/bootstrap.js",
+    "db:migrate": "npm -w apps/api run prisma:migrate",
+    "db:generate": "npm -w apps/api run prisma:generate",
+    "start:all": "npm install && npm run bootstrap && npm run db:generate && npm run db:migrate && npm run dev",
+    "lint": "echo 'Add linting per app'",
+    "typecheck": "echo 'Add typechecking per app'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "metro": "^0.80.10",
+    "@react-native-community/cli-server-api": "^11.3.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "overrides": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  }
+}
