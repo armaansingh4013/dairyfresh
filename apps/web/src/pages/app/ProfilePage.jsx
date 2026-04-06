@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../services/api.js";
+import AddressFormFields, {
+  createEmptyAddress,
+  formatAddressSummary,
+  validateAddress
+} from "../../components/AddressFormFields.jsx";
 
 export default function ProfilePage({ user }) {
   const DELIVERY_BATCH_SIZE = 5;
@@ -7,16 +12,7 @@ export default function ProfilePage({ user }) {
   const [addresses, setAddresses] = useState([]);
   const [addressEdits, setAddressEdits] = useState({});
   const [editingAddressId, setEditingAddressId] = useState(null);
-  const [newAddress, setNewAddress] = useState({
-    title: "Home",
-    line1: "",
-    line2: "",
-    landmark: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    isDefault: true
-  });
+  const [newAddress, setNewAddress] = useState(createEmptyAddress());
   const [showDeliveries, setShowDeliveries] = useState(false);
   const [visibleDeliveries, setVisibleDeliveries] = useState(DELIVERY_BATCH_SIZE);
   const [profileForm, setProfileForm] = useState({
@@ -52,10 +48,16 @@ export default function ProfilePage({ user }) {
             addr.id,
             {
               title: addr.title,
+              houseNumber: addr.houseNumber || "",
               line1: addr.line1,
+              line2: addr.line2 || "",
+              landmark: addr.landmark || "",
               city: addr.city,
               state: addr.state,
-              postalCode: addr.postalCode
+              postalCode: addr.postalCode,
+              lat: addr.lat ?? null,
+              lng: addr.lng ?? null,
+              isDefault: Boolean(addr.isDefault)
             }
           ])
         )
@@ -82,6 +84,11 @@ export default function ProfilePage({ user }) {
   async function saveAddress(addressId) {
     const edit = addressEdits[addressId];
     if (!edit) return;
+    const validation = validateAddress(edit);
+    if (validation) {
+      setStatus(validation);
+      return;
+    }
     try {
       await apiPatch(`/users/addresses/${addressId}`, edit);
       setStatus("Address updated.");
@@ -111,18 +118,14 @@ export default function ProfilePage({ user }) {
   async function addAddress(event) {
     event.preventDefault();
     setStatus("");
+    const validation = validateAddress(newAddress);
+    if (validation) {
+      setStatus(validation);
+      return;
+    }
     try {
       await apiPost(`/users/${user.id}/addresses`, newAddress);
-      setNewAddress({
-        title: "Home",
-        line1: "",
-        line2: "",
-        landmark: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        isDefault: true
-      });
+      setNewAddress(createEmptyAddress());
       loadAddresses();
     } catch {
       setStatus("Unable to add address.");
@@ -191,55 +194,7 @@ export default function ProfilePage({ user }) {
       <h3>Saved addresses</h3>
       <form className="section-card address-form" onSubmit={addAddress}>
         <h4>Add new address</h4>
-        <div className="field-row">
-          <label className="field">
-            <span>Title</span>
-            <input
-              value={newAddress.title}
-              onChange={(e) =>
-                setNewAddress((prev) => ({ ...prev, title: e.target.value }))
-              }
-            />
-          </label>
-          <label className="field">
-            <span>City</span>
-            <input
-              value={newAddress.city}
-              onChange={(e) =>
-                setNewAddress((prev) => ({ ...prev, city: e.target.value }))
-              }
-            />
-          </label>
-        </div>
-        <label className="field">
-          <span>Address Line 1</span>
-          <input
-            value={newAddress.line1}
-            onChange={(e) =>
-              setNewAddress((prev) => ({ ...prev, line1: e.target.value }))
-            }
-          />
-        </label>
-        <div className="field-row">
-          <label className="field">
-            <span>State</span>
-            <input
-              value={newAddress.state}
-              onChange={(e) =>
-                setNewAddress((prev) => ({ ...prev, state: e.target.value }))
-              }
-            />
-          </label>
-          <label className="field">
-            <span>Postal Code</span>
-            <input
-              value={newAddress.postalCode}
-              onChange={(e) =>
-                setNewAddress((prev) => ({ ...prev, postalCode: e.target.value }))
-              }
-            />
-          </label>
-        </div>
+        <AddressFormFields value={newAddress} onChange={setNewAddress} />
         <button className="ghost" type="submit">
           Add Address
         </button>
@@ -251,7 +206,7 @@ export default function ProfilePage({ user }) {
               <div>
                 <h4>{addr.title || "Address"}</h4>
                 <p>
-                  {addr.line1}
+                  {formatAddressSummary(addr)}
                   <br />
                   {addr.city}, {addr.state} {addr.postalCode}
                 </p>
@@ -280,68 +235,18 @@ export default function ProfilePage({ user }) {
 
             {editingAddressId === addr.id && (
               <div className="address-edit-form">
-                <label className="field">
-                  <span>Title</span>
-                  <input
-                    value={addressEdits[addr.id]?.title || ""}
-                    onChange={(e) =>
-                      setAddressEdits((current) => ({
-                        ...current,
-                        [addr.id]: { ...current[addr.id], title: e.target.value }
-                      }))
-                    }
-                  />
-                </label>
-                <label className="field">
-                  <span>Line 1</span>
-                  <input
-                    value={addressEdits[addr.id]?.line1 || ""}
-                    onChange={(e) =>
-                      setAddressEdits((current) => ({
-                        ...current,
-                        [addr.id]: { ...current[addr.id], line1: e.target.value }
-                      }))
-                    }
-                  />
-                </label>
-                <div className="field-row">
-                  <label className="field">
-                    <span>City</span>
-                    <input
-                      value={addressEdits[addr.id]?.city || ""}
-                      onChange={(e) =>
-                        setAddressEdits((current) => ({
-                          ...current,
-                          [addr.id]: { ...current[addr.id], city: e.target.value }
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    <span>State</span>
-                    <input
-                      value={addressEdits[addr.id]?.state || ""}
-                      onChange={(e) =>
-                        setAddressEdits((current) => ({
-                          ...current,
-                          [addr.id]: { ...current[addr.id], state: e.target.value }
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Postal Code</span>
-                    <input
-                      value={addressEdits[addr.id]?.postalCode || ""}
-                      onChange={(e) =>
-                        setAddressEdits((current) => ({
-                          ...current,
-                          [addr.id]: { ...current[addr.id], postalCode: e.target.value }
-                        }))
-                      }
-                    />
-                  </label>
-                </div>
+                <AddressFormFields
+                  value={addressEdits[addr.id] || createEmptyAddress()}
+                  onChange={(updater) =>
+                    setAddressEdits((current) => ({
+                      ...current,
+                      [addr.id]:
+                        typeof updater === "function"
+                          ? updater(current[addr.id] || createEmptyAddress())
+                          : updater
+                    }))
+                  }
+                />
 
                 <button className="primary" type="button" onClick={() => saveAddress(addr.id)}>
                   Save Address

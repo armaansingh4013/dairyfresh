@@ -39,15 +39,15 @@ if (fs.existsSync(apiEnvPath)) {
   const apiEnv = fs.readFileSync(apiEnvPath, "utf8");
   const line = apiEnv
     .split("\n")
-    .find((l) => l.trim().startsWith("DATABASE_URL="));
-  if (!line || line.includes("USER:PASSWORD")) {
+    .find((l) => l.trim().startsWith("MONGODB_URL="));
+  if (!line || line.includes("127.0.0.1:27017/dairy")) {
     console.warn(
-      "[bootstrap] Update DATABASE_URL in apps/api/.env before running migrations."
+      "[bootstrap] Update MONGODB_URL in apps/api/.env before starting the API."
     );
     missing++;
   }
 }
 
 if (missing > 0) {
-  console.warn("[bootstrap] Fix env values and re-run db:migrate if needed.");
+  console.warn("[bootstrap] Fix env values and re-run bootstrap if needed.");
 }

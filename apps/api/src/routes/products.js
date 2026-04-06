@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/", async (req, res) => {
   const includeInactive = String(req.query.includeInactive || "") === "true";
-  res.json(listProducts(includeInactive));
+  res.json(await listProducts(includeInactive));
 });
 
 router.post("/", async (req, res) => {
@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  res.json(createProduct(body.data));
+  res.json(await createProduct(body.data));
 });
 
 router.patch("/:productId", async (req, res) => {
@@ -43,7 +43,7 @@ router.patch("/:productId", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  const product = updateProduct(req.params.productId, body.data);
+  const product = await updateProduct(req.params.productId, body.data);
   if (!product) {
     return res.status(404).json({ error: "Product not found" });
   }

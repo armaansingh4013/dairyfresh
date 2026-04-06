@@ -16,7 +16,7 @@ router.patch("/:planId", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  const plan = updatePlan(req.params.planId, body.data);
+  const plan = await updatePlan(req.params.planId, body.data);
   if (!plan) {
     return res.status(404).json({ error: "Plan not found" });
   }
@@ -41,7 +41,7 @@ router.post("/:planId/days", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  res.json(upsertPlanDays(req.params.planId, body.data.days));
+  res.json(await upsertPlanDays(req.params.planId, body.data.days));
 });
 
 router.post("/:planId/pause", async (req, res) => {
@@ -53,7 +53,7 @@ router.post("/:planId/pause", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  res.json(createPlanPause(req.params.planId, body.data));
+  res.json(await createPlanPause(req.params.planId, body.data));
 });
 
 export default router;

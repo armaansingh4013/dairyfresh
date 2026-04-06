@@ -12,7 +12,7 @@ router.post("/request-otp", async (req, res) => {
     return res.status(400).json({ error: "Invalid phone" });
   }
 
-  ensureCoreDemoData();
+  await ensureCoreDemoData();
 
   res.json({
     success: true,
@@ -39,12 +39,12 @@ router.post("/verify-otp", async (req, res) => {
     return res.status(401).json({ error: "Invalid OTP. Use 1111 for demo login." });
   }
 
-  ensureCoreDemoData();
+  await ensureCoreDemoData();
 
-  const existingUser = findUserByPhone(body.data.phone);
-  const user = upsertUserByPhone(body.data);
+  const existingUser = await findUserByPhone(body.data.phone);
+  const user = await upsertUserByPhone(body.data);
   if (!existingUser) {
-    ensureDemoCustomerData(user);
+    await ensureDemoCustomerData(user);
   }
 
   res.json({
@@ -59,7 +59,7 @@ router.get("/session", async (req, res) => {
     return res.status(401).json({ error: "Invalid session" });
   }
 
-  const user = getUserById(session.userId);
+  const user = await getUserById(session.userId);
   if (!user) {
     return res.status(404).json({ error: "User not found" });
   }

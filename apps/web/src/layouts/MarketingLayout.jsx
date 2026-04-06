@@ -1,7 +1,10 @@
 import React from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useCart } from "../contexts/CartContext.jsx";
 
 export default function MarketingLayout({ user, onLogout, children }) {
+  const { itemCount } = useCart();
+
   return (
     <div className="page-shell">
       <div className="page">
@@ -22,6 +25,10 @@ export default function MarketingLayout({ user, onLogout, children }) {
             <NavLink to="/contact">Contact</NavLink>
           </nav>
           <div className="nav-actions">
+            <Link className="ghost cart-link" to="/cart">
+              Cart
+              {itemCount ? <span className="cart-count">{itemCount}</span> : null}
+            </Link>
             {user ? (
               <>
                 <Link className="ghost" to="/app/dashboard">

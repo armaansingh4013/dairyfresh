@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet } from "../../services/api.js";
+import { useCart } from "../../contexts/CartContext.jsx";
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
+  const { addItem, items, updateQuantity } = useCart();
 
   useEffect(() => {
     loadProducts();
@@ -16,6 +18,15 @@ export default function HomePage() {
     } catch {
       setProducts([]);
     }
+  }
+
+  function getCartItem(productId) {
+    return items.find(
+      (item) =>
+        item._id === productId ||
+        item.productId === productId ||
+        item.id === productId
+    );
   }
 
   return (
@@ -37,6 +48,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+
         <aside className="summary-card">
           <h3>Why customers love us</h3>
           <ul className="feature-list">
@@ -50,15 +62,55 @@ export default function HomePage() {
       <section className="section-card">
         <p className="section-kicker">Highlights</p>
         <h2>Popular products</h2>
+
         <div className="products">
-          {products.map((product) => (
-            <article key={product.id} className="product">
-              <h3>{product.name}</h3>
-              <p>{product.description || "Farm-fresh dairy item."}</p>
-              <p className="price">INR {product.price} / {product.unit}</p>
-            </article>
-          ))}
+          {products.map((product) => {
+            const productId = product._id || product.id;
+            const cartItem = getCartItem(productId);
+            const quantity = cartItem?.quantity || 0;
+
+            return (
+              <article key={productId} className="product">
+                <h3>{product.name}</h3>
+                <p>{product.description || "Farm-fresh dairy item."}</p>
+                <p className="price">
+                  INR {product.price} / {product.unit}
+                </p>
+
+                {quantity > 0 ? (
+                  <div className="qty-stepper">
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => updateQuantity(productId, quantity - 1)}
+                    >
+                      -
+                    </button>
+
+                    <span>{quantity}</span>
+
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => updateQuantity(productId, quantity + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="primary wide"
+                    type="button"
+                    onClick={() => addItem(product, 1)}
+                  >
+                    Add to Cart
+                  </button>
+                )}
+              </article>
+            );
+          })}
         </div>
+
         {!products.length && (
           <p className="empty-state">Add products in Admin to showcase here.</p>
         )}

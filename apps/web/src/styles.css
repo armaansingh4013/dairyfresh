@@ -65,6 +65,25 @@ body {
   flex-wrap: wrap;
 }
 
+.cart-link {
+  position: relative;
+}
+
+.cart-count {
+  margin-left: 8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .nav-links a {
   text-decoration: none;
   color: var(--muted);
@@ -402,12 +421,18 @@ h2 {
 
 .toggle {
   background: white;
-  color: var(--ink);
-  border: 1px solid var(--line);
+
+  color: inear-gradient(135deg, var(--accent), var(--accent-strong));
+  padding: 10px 16px;
+  text-decoration: none;
+  border-radius: 100px;
+  box-shadow: 0 16px 30px rgba(216, 107, 47, 0.25);
+  border: 1px solid rgba(180, 79, 25, 0.35);
 }
 
 .toggle.active {
-  background: #221d18;
+ 
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: white;
 }
 
@@ -817,6 +842,71 @@ h2 {
 
 .address-form {
   margin-top: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.checkbox-field input {
+  margin: 0;
+}
+
+.location-picker {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 248, 242, 0.85);
+}
+
+.location-picker-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.location-picker-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.location-search {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.location-map {
+  min-height: 280px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(216, 107, 47, 0.18);
+}
+
+.location-coordinates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .modal-overlay {

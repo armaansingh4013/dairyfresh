@@ -4,12 +4,12 @@ Backend API for the dairy delivery platform.
 
 ## Setup
 1. Copy `.env.example` to `.env`.
-2. Start with `npm run dev`.
+2. Set `MONGODB_URL` to your MongoDB connection string.
+3. Start with `npm run dev`.
 
 ## Notes
-- Runtime data is stored in `apps/api/data/store.json`, so the API no longer depends on a running PostgreSQL instance for demo usage.
+- Runtime data is stored in MongoDB through Mongoose models in `src/models/index.js`.
 - OTP login is demo-only. Use `1111`.
-- Prisma files are still present from the original scaffold, but the live request path is file-backed.
 
 ## Core Endpoints
 - `GET /products`

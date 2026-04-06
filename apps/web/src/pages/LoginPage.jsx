@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiPost } from "../services/api.js";
 
 export default function LoginPage({ onLogin }) {
@@ -8,6 +8,7 @@ export default function LoginPage({ onLogin }) {
   const [status, setStatus] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   async function handleRequestOtp() {
     setStatus("");
@@ -43,7 +44,7 @@ export default function LoginPage({ onLogin }) {
         otp: otp.trim()
       });
       onLogin(payload);
-      navigate("/app/dashboard");
+      navigate(searchParams.get("redirect") || "/app/dashboard");
     } catch (error) {
       setStatus(error.message);
     }

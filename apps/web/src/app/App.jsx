@@ -15,14 +15,17 @@ import SignupPage from "../pages/auth/SignupPage.jsx";
 import DashboardPage from "../pages/DashboardPage.jsx";
 import SubscriptionsPage from "../pages/SubscriptionsPage.jsx";
 import BillingPage from "../pages/BillingPage.jsx";
+import CartPage from "../pages/CartPage.jsx";
 import ProfilePage from "../pages/app/ProfilePage.jsx";
 import OngoingSubscriptionsPage from "../pages/app/OngoingSubscriptionsPage.jsx";
+import OrdersPage from "../pages/app/OrdersPage.jsx";
 import SubscriptionWizard from "../pages/app/SubscriptionWizard.jsx";
 import SubscriptionDetailPage from "../pages/app/SubscriptionDetailPage.jsx";
 import CancelledSubscriptionsPage from "../pages/app/CancelledSubscriptionsPage.jsx";
 import CompletedSubscriptionsPage from "../pages/app/CompletedSubscriptionsPage.jsx";
 import CompletedOrdersPage from "../pages/app/CompletedOrdersPage.jsx";
 import { apiGet } from "../services/api.js";
+import { CartProvider } from "../contexts/CartContext.jsx";
 
 export default function App() {
   const [session, setSession] = useState(() => {
@@ -82,6 +85,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <CartProvider>
       <Routes>
         <Route
           path="/*"
@@ -92,6 +96,7 @@ export default function App() {
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/cart" element={<CartPage user={user} />} />
                 <Route path="/login" element={<LoginPage onLogin={handleLoginSuccess} />} />
                 <Route path="/signup" element={<SignupPage onLogin={handleLoginSuccess} />} />
                 <Route
@@ -130,6 +135,7 @@ export default function App() {
                   <Route path="subscriptions/:planId" element={<SubscriptionDetailPage user={user} />} />
                   <Route path="billing" element={<BillingPage user={user} />} />
                   <Route path="profile" element={<ProfilePage user={user} />} />
+                  <Route path="orders" element={<OrdersPage user={user} />} />
                   <Route path="ongoing" element={<OngoingSubscriptionsPage user={user} />} />
                   <Route path="start" element={<SubscriptionWizard user={user} />} />
                 </Routes>
@@ -138,6 +144,7 @@ export default function App() {
           }
         />
       </Routes>
+      </CartProvider>
     </BrowserRouter>
   );
 }

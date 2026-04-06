@@ -19,6 +19,6 @@ Monorepo for:
 3. Start everything with `npm run dev`.
 
 ## Notes
-- The API now runs in demo mode with a file-backed store at `apps/api/data/store.json`.
+- The API stores runtime data in MongoDB via `MONGODB_URL` from `apps/api/.env`.
 - Web and mobile login both use demo OTP `1111`.
 - If Expo runs on a physical device, set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env` to a reachable host IP instead of `localhost`.

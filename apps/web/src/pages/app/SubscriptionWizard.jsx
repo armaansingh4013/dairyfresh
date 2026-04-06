@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet, apiPost } from "../../services/api.js";
 import { datesBetween, toDateString } from "../../utils/date.js";
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+import AddressFormFields, {
+  createEmptyAddress,
+  formatAddressSummary,
+  validateAddress
+} from "../../components/AddressFormFields.jsx";
 
 export default function SubscriptionWizard({ user }) {
   const navigate = useNavigate();
@@ -12,16 +15,7 @@ export default function SubscriptionWizard({ user }) {
   const [addresses, setAddresses] = useState([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [status, setStatus] = useState("");
-  const [addressForm, setAddressForm] = useState({
-    title: "Home",
-    line1: "",
-    line2: "",
-    landmark: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    isDefault: true
-  });
+  const [addressForm, setAddressForm] = useState(createEmptyAddress());
 
   const [form, setForm] = useState({
     productId: "",
@@ -31,15 +25,7 @@ export default function SubscriptionWizard({ user }) {
     quantity: 1,
     addressId: ""
   });
-  const [planDays, setPlanDays] = useState({
-    Mon: true,
-    Tue: true,
-    Wed: true,
-    Thu: true,
-    Fri: true,
-    Sat: false,
-    Sun: false
-  });
+  const [selectedDates, setSelectedDates] = useState({});
 
   useEffect(() => {
     loadData();
@@ -64,21 +50,17 @@ export default function SubscriptionWizard({ user }) {
   }
 
   function resetAddressForm() {
-    setAddressForm({
-      title: "Home",
-      line1: "",
-      line2: "",
-      landmark: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      isDefault: true
-    });
+    setAddressForm(createEmptyAddress());
   }
 
   async function addAddress(event) {
     event.preventDefault();
     setStatus("");
+    const validation = validateAddress(addressForm);
+    if (validation) {
+      setStatus(validation);
+      return;
+    }
     try {
       const payload = { ...addressForm };
       const saved = await apiPost(`/users/${user.id}/addresses`, payload);
@@ -99,9 +81,21 @@ export default function SubscriptionWizard({ user }) {
   const totalDays = useMemo(() => {
     const days = datesBetween(form.startDate, form.endDate);
     if (form.mode === "EVERYDAY") return days.length;
-    const enabled = WEEKDAYS.filter((day) => planDays[day]);
-    return days.filter((date) => enabled.includes(WEEKDAYS[date.getDay()])).length;
-  }, [form.startDate, form.endDate, form.mode, planDays]);
+    return days.filter((date) => selectedDates[toDateString(date)]).length;
+  }, [form.startDate, form.endDate, form.mode, selectedDates]);
+
+  const customCalendar = useMemo(
+    () =>
+      datesBetween(form.startDate, form.endDate).map((date) => {
+        const key = toDateString(date);
+        return {
+          date,
+          key,
+          active: Boolean(selectedDates[key])
+        };
+      }),
+    [form.startDate, form.endDate, selectedDates]
+  );
 
   const estimate = selectedProduct
     ? totalDays * selectedProduct.price * (Number(form.quantity) || 1)
@@ -115,6 +109,13 @@ export default function SubscriptionWizard({ user }) {
   function prevStep() {
     setStatus("");
     setStep((s) => Math.max(1, s - 1));
+  }
+
+  function toggleCustomDate(dateKey) {
+    setSelectedDates((current) => ({
+      ...current,
+      [dateKey]: !current[dateKey]
+    }));
   }
 
   async function submitPlan() {
@@ -138,14 +139,18 @@ export default function SubscriptionWizard({ user }) {
     };
 
     if (form.mode === "CUSTOM") {
-      const enabledDays = WEEKDAYS.filter((day) => planDays[day]);
-      const days = datesBetween(form.startDate, form.endDate)
-        .filter((date) => enabledDays.includes(WEEKDAYS[date.getDay()]))
-        .map((date) => ({
-          date: toDateString(date),
+      const days = customCalendar
+        .filter((item) => item.active)
+        .map((item) => ({
+          date: item.key,
           quantity: Number(form.quantity) || 1,
           addressId: form.addressId
         }));
+
+      if (!days.length) {
+        setStatus("Select at least one delivery date on the calendar.");
+        return;
+      }
 
       payload.days = days;
     }
@@ -170,11 +175,11 @@ export default function SubscriptionWizard({ user }) {
           <div className="products">
             {products.map((product) => (
               <button
-                key={product.id}
+                key={product._id}
                 className={
-                  form.productId === product.id ? "product selected" : "product"
+                  form.productId === product._id ? "product selected" : "product"
                 }
-                onClick={() => setForm((prev) => ({ ...prev, productId: product.id }))}
+                onClick={() => setForm((prev) => ({ ...prev, productId: product._id }))}
               >
                 <h4>{product.name}</h4>
                 <p>{product.description || "Fresh dairy item."}</p>
@@ -225,30 +230,31 @@ export default function SubscriptionWizard({ user }) {
                 onChange={(e) => setForm((prev) => ({ ...prev, mode: e.target.value }))}
               >
                 <option value="EVERYDAY">Every day</option>
-                <option value="CUSTOM">Custom weekdays</option>
+                <option value="CUSTOM">Custom dates</option>
               </select>
             </label>
           </div>
           {form.mode === "CUSTOM" && (
             <div className="field">
-              <span>Weekdays</span>
-              <div className="days">
-                {WEEKDAYS.map((day) => (
-                  <label key={day} className={planDays[day] ? "day active" : "day"}>
-                    <input
-                      type="checkbox"
-                      checked={planDays[day]}
-                      onChange={() =>
-                        setPlanDays((current) => ({
-                          ...current,
-                          [day]: !current[day]
-                        }))
-                      }
-                    />
-                    {day}
-                  </label>
+              <span>Choose exact delivery dates</span>
+              <div className="calendar">
+                {customCalendar.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={item.active ? "cal-day" : "cal-day off"}
+                    onClick={() => toggleCustomDate(item.key)}
+                    title="Click to add or remove this delivery date."
+                  >
+                    <span>{new Date(item.date).getDate()}</span>
+                    <span className="dot" />
+                    <small>{item.active ? "Selected" : "Skip"}</small>
+                  </button>
                 ))}
               </div>
+              <p className="empty-state">
+                Click only the dates you want delivered for this custom subscription.
+              </p>
             </div>
           )}
         </div>
@@ -268,7 +274,7 @@ export default function SubscriptionWizard({ user }) {
                 onClick={() => setForm((prev) => ({ ...prev, addressId: addr.id }))}
               >
                 <strong>{addr.title}</strong>
-                <p>{addr.line1}</p>
+                <p>{formatAddressSummary(addr)}</p>
                 <p>
                   {addr.city}, {addr.state} {addr.postalCode}
                 </p>
@@ -318,73 +324,7 @@ export default function SubscriptionWizard({ user }) {
                 </div>
 
                 <form className="address-form" onSubmit={addAddress}>
-                  <div className="field-row">
-                    <label className="field">
-                      <span>Title</span>
-                      <input
-                        value={addressForm.title}
-                        onChange={(e) =>
-                          setAddressForm((prev) => ({ ...prev, title: e.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      <span>City</span>
-                      <input
-                        value={addressForm.city}
-                        onChange={(e) =>
-                          setAddressForm((prev) => ({ ...prev, city: e.target.value }))
-                        }
-                      />
-                    </label>
-                  </div>
-                  <label className="field">
-                    <span>Address Line 1</span>
-                    <input
-                      value={addressForm.line1}
-                      onChange={(e) =>
-                        setAddressForm((prev) => ({ ...prev, line1: e.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Address Line 2</span>
-                    <input
-                      value={addressForm.line2}
-                      onChange={(e) =>
-                        setAddressForm((prev) => ({ ...prev, line2: e.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="field">
-                    <span>Landmark</span>
-                    <input
-                      value={addressForm.landmark}
-                      onChange={(e) =>
-                        setAddressForm((prev) => ({ ...prev, landmark: e.target.value }))
-                      }
-                    />
-                  </label>
-                  <div className="field-row">
-                    <label className="field">
-                      <span>State</span>
-                      <input
-                        value={addressForm.state}
-                        onChange={(e) =>
-                          setAddressForm((prev) => ({ ...prev, state: e.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Postal Code</span>
-                      <input
-                        value={addressForm.postalCode}
-                        onChange={(e) =>
-                          setAddressForm((prev) => ({ ...prev, postalCode: e.target.value }))
-                        }
-                      />
-                    </label>
-                  </div>
+                  <AddressFormFields value={addressForm} onChange={setAddressForm} />
                   <div className="modal-actions">
                     <button
                       type="button"

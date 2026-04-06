@@ -18,13 +18,14 @@ import { toDateOnly } from "../utils/date.js";
 const router = Router();
 
 router.get("/:userId/addresses", async (req, res) => {
-  res.json(listAddresses(req.params.userId));
+  res.json(await listAddresses(req.params.userId));
 });
 
 router.post("/:userId/addresses", async (req, res) => {
   const body = z
     .object({
       title: z.string().min(1),
+      houseNumber: z.string().min(1),
       line1: z.string().min(1),
       line2: z.string().optional(),
       landmark: z.string().optional(),
@@ -41,7 +42,7 @@ router.post("/:userId/addresses", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  res.json(createAddress(req.params.userId, body.data));
+  res.json(await createAddress(req.params.userId, body.data));
 });
 
 router.patch("/:userId", async (req, res) => {
@@ -56,7 +57,7 @@ router.patch("/:userId", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  const user = updateUser(req.params.userId, body.data);
+  const user = await updateUser(req.params.userId, body.data);
   if (!user) {
     return res.status(404).json({ error: "User not found" });
   }
@@ -68,6 +69,7 @@ router.patch("/addresses/:addressId", async (req, res) => {
   const body = z
     .object({
       title: z.string().min(1).optional(),
+      houseNumber: z.string().min(1).optional(),
       line1: z.string().min(1).optional(),
       line2: z.string().optional(),
       landmark: z.string().optional(),
@@ -84,7 +86,7 @@ router.patch("/addresses/:addressId", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  const address = updateAddress(req.params.addressId, body.data);
+  const address = await updateAddress(req.params.addressId, body.data);
   if (!address) {
     return res.status(404).json({ error: "Address not found" });
   }
@@ -93,12 +95,12 @@ router.patch("/addresses/:addressId", async (req, res) => {
 });
 
 router.delete("/addresses/:addressId", async (req, res) => {
-  deleteAddress(req.params.addressId);
+  await deleteAddress(req.params.addressId);
   res.json({ success: true });
 });
 
 router.get("/:userId/plans", async (req, res) => {
-  res.json(listUserPlans(req.params.userId));
+  res.json(await listUserPlans(req.params.userId));
 });
 
 router.post("/:userId/plans", async (req, res) => {
@@ -107,6 +109,7 @@ router.post("/:userId/plans", async (req, res) => {
       productId: z.string(),
       startDate: z.string(),
       endDate: z.string(),
+    
       mode: z.enum(["EVERYDAY", "CUSTOM"]),
       defaultQuantity: z.number().nonnegative(),
       days: z
@@ -131,7 +134,7 @@ router.post("/:userId/plans", async (req, res) => {
     return res.status(400).json({ error: "endDate must be after startDate" });
   }
 
-  const plan = createPlan(req.params.userId, body.data);
+  const plan = await createPlan(req.params.userId, body.data);
   if (!plan) {
     return res.status(400).json({ error: "Invalid userId or productId" });
   }
@@ -140,15 +143,15 @@ router.post("/:userId/plans", async (req, res) => {
 });
 
 router.get("/:userId/deliveries", async (req, res) => {
-  res.json(listUserDeliveries(req.params.userId));
+  res.json(await listUserDeliveries(req.params.userId));
 });
 
 router.get("/:userId/invoices", async (req, res) => {
-  res.json(listUserInvoices(req.params.userId));
+  res.json(await listUserInvoices(req.params.userId));
 });
 
 router.get("/:userId/summary", async (req, res) => {
-  const summary = listUserSummary(req.params.userId);
+  const summary = await listUserSummary(req.params.userId);
   if (!summary) {
     return res.status(404).json({ error: "User not found" });
   }

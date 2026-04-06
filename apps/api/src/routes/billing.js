@@ -15,7 +15,7 @@ router.post("/invoices/:invoiceId/payments", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  const payment = createPayment(req.params.invoiceId, body.data.provider);
+  const payment = await createPayment(req.params.invoiceId, body.data.provider);
   if (!payment) {
     return res.status(404).json({ error: "Invoice not found" });
   }
