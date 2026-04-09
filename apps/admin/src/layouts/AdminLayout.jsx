@@ -15,7 +15,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="admin">
       <aside className="sidebar">
-        <h2>Dairy Admin</h2>
+        <h2>Mazara Dairy Admin</h2>
         <nav>
           {NAV_ITEMS.map((item) => (
             <NavLink

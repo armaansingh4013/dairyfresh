@@ -2,8 +2,28 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiPost } from "../services/api.js";
 
-export default function LoginPage({ onLogin }) {
-  const [phone, setPhone] = useState("");
+function isEmailValue(value) {
+  return /\S+@\S+\.\S+/.test(value.trim());
+}
+
+function buildAuthPayload(contact, name) {
+  const trimmedContact = contact.trim();
+  const trimmedName = name.trim();
+  const payload = isEmailValue(trimmedContact)
+    ? { email: trimmedContact }
+    : { phone: trimmedContact };
+
+  if (trimmedName) {
+    payload.name = trimmedName;
+  }
+
+  return payload;
+}
+
+export default function LoginPage({ onLogin, mode = "login" }) {
+  const isSignup = mode === "signup";
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
   const [otp, setOtp] = useState("");
   const [status, setStatus] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -13,15 +33,18 @@ export default function LoginPage({ onLogin }) {
   async function handleRequestOtp() {
     setStatus("");
 
-    if (!phone.trim()) {
-      setStatus("Enter phone first.");
+    if (!contact.trim()) {
+      setStatus(isSignup ? "Enter email or phone first." : "Enter phone or email first.");
+      return;
+    }
+
+    if (isSignup && !name.trim()) {
+      setStatus("Enter name first.");
       return;
     }
 
     try {
-      const payload = await apiPost("/auth/request-otp", {
-        phone: phone.trim()
-      });
+      const payload = await apiPost("/auth/request-otp", buildAuthPayload(contact, name));
       setOtpSent(true);
       setStatus(payload.message || "OTP sent.");
     } catch (error) {
@@ -33,14 +56,19 @@ export default function LoginPage({ onLogin }) {
     event.preventDefault();
     setStatus("");
 
-    if (!phone.trim() || !otp.trim()) {
-      setStatus("Enter phone and OTP.");
+    if (!contact.trim() || !otp.trim()) {
+      setStatus(isSignup ? "Enter name, email or phone, and OTP." : "Enter phone or email and OTP.");
+      return;
+    }
+
+    if (isSignup && !name.trim()) {
+      setStatus("Enter name, email or phone, and OTP.");
       return;
     }
 
     try {
       const payload = await apiPost("/auth/verify-otp", {
-        phone: phone.trim(),
+        ...buildAuthPayload(contact, name),
         otp: otp.trim()
       });
       onLogin(payload);
@@ -53,14 +81,28 @@ export default function LoginPage({ onLogin }) {
   return (
     <section className="section-card auth-layout">
       <div className="auth-copy">
-        <p className="section-kicker">Login</p>
-        <h2>Sign in with phone + OTP</h2>
-        <p className="lead compact">Use any OTP for now (mock).</p>
+        <p className="section-kicker">{isSignup ? "Signup" : "Login"}</p>
+        <h2>{isSignup ? "Create account with name + OTP" : "Sign in with phone or email + OTP"}</h2>
+        <p className="lead compact">
+          {isSignup
+            ? "Enter your name and either a phone number or email address."
+            : "Use your phone number or email address to receive an OTP."}
+        </p>
       </div>
       <form className="auth-form" style={{display: "flex", flexDirection:"column", gap:"18px"}} onSubmit={handleLogin}>
+        {isSignup ? (
+          <label className="field">
+            <span>Name</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+        ) : null}
         <label className="field">
-          <span>Phone</span>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <span>{isSignup ? "Email or Phone" : "Phone or Email"}</span>
+          <input
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder={isSignup ? "name@example.com or 1231231231" : "1231231231 or name@example.com"}
+          />
         </label>
         <button className="ghost" type="button" onClick={handleRequestOtp}>
           {otpSent ? "Resend OTP" : "Send OTP"}
@@ -70,7 +112,7 @@ export default function LoginPage({ onLogin }) {
           <input value={otp} onChange={(e) => setOtp(e.target.value)} />
         </label>
         <button className="primary" type="submit">
-          Login
+          {isSignup ? "Create account" : "Login"}
         </button>
         {status && <p className="message">{status}</p>}
       </form>

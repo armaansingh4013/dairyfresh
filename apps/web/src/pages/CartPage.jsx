@@ -18,6 +18,7 @@ export default function CartPage({ user }) {
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
 
   useEffect(() => {
     async function loadAddresses() {
@@ -43,6 +44,16 @@ export default function CartPage({ user }) {
     loadAddresses();
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!placedOrder) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      navigate("/app/orders");
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [navigate, placedOrder]);
+
   async function handleCheckout() {
     setStatus("");
 
@@ -63,7 +74,7 @@ export default function CartPage({ user }) {
 
     setIsSubmitting(true);
     try {
-      await apiPost("/orders", {
+      const order = await apiPost("/orders", {
         userId: user.id,
         addressId,
         date,
@@ -74,7 +85,7 @@ export default function CartPage({ user }) {
         }))
       });
       clearCart();
-      navigate("/app/orders");
+      setPlacedOrder(order);
     } catch (error) {
       setStatus(error.message || "Unable to place order.");
     } finally {
@@ -191,6 +202,24 @@ export default function CartPage({ user }) {
         </div>
         {status ? <p className="message">{status}</p> : null}
       </aside>
+      {placedOrder ? (
+        <div className="modal-overlay" onClick={() => navigate("/app/orders")}>
+          <div className="modal-card order-success-card" onClick={(event) => event.stopPropagation()}>
+            <div className="success-tick" aria-hidden="true">
+              <svg viewBox="0 0 52 52">
+                <circle className="success-tick-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="success-tick-check" fill="none" d="M14 27 22 35 38 18" />
+              </svg>
+            </div>
+            <p className="section-kicker">Order Placed</p>
+            <h3>Your order has been placed successfully.</h3>
+            <p className="message">
+              Order #{placedOrder.id.slice(-6).toUpperCase()} is confirmed. Taking you to your
+              orders now.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

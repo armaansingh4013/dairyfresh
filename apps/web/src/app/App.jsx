@@ -17,13 +17,9 @@ import SubscriptionsPage from "../pages/SubscriptionsPage.jsx";
 import BillingPage from "../pages/BillingPage.jsx";
 import CartPage from "../pages/CartPage.jsx";
 import ProfilePage from "../pages/app/ProfilePage.jsx";
-import OngoingSubscriptionsPage from "../pages/app/OngoingSubscriptionsPage.jsx";
 import OrdersPage from "../pages/app/OrdersPage.jsx";
 import SubscriptionWizard from "../pages/app/SubscriptionWizard.jsx";
 import SubscriptionDetailPage from "../pages/app/SubscriptionDetailPage.jsx";
-import CancelledSubscriptionsPage from "../pages/app/CancelledSubscriptionsPage.jsx";
-import CompletedSubscriptionsPage from "../pages/app/CompletedSubscriptionsPage.jsx";
-import CompletedOrdersPage from "../pages/app/CompletedOrdersPage.jsx";
 import { apiGet } from "../services/api.js";
 import { CartProvider } from "../contexts/CartContext.jsx";
 
@@ -122,21 +118,22 @@ export default function App() {
                   <Route path="subscriptions" element={<SubscriptionsPage user={user} />} />
                   <Route
                     path="subscriptions/cancelled"
-                    element={<CancelledSubscriptionsPage user={user} />}
+                    element={<Navigate to="/app/subscriptions?tab=cancelled" replace />}
                   />
                   <Route
                     path="subscriptions/completed"
-                    element={<CompletedSubscriptionsPage user={user} />}
+                    element={<Navigate to="/app/subscriptions?tab=completed" replace />}
                   />
                   <Route
                     path="subscriptions/history"
-                    element={<CompletedOrdersPage user={user} />}
+                    element={<Navigate to="/app/subscriptions?tab=history" replace />}
                   />
                   <Route path="subscriptions/:planId" element={<SubscriptionDetailPage user={user} />} />
                   <Route path="billing" element={<BillingPage user={user} />} />
+                  <Route path="cart" element={<CartPage user={user} />} />
                   <Route path="profile" element={<ProfilePage user={user} />} />
                   <Route path="orders" element={<OrdersPage user={user} />} />
-                  <Route path="ongoing" element={<OngoingSubscriptionsPage user={user} />} />
+                  <Route path="ongoing" element={<Navigate to="/app/subscriptions" replace />} />
                   <Route path="start" element={<SubscriptionWizard user={user} />} />
                 </Routes>
               </AppLayout>

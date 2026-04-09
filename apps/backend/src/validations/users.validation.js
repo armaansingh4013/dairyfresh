@@ -37,6 +37,7 @@ export const createUserPlanSchema = z.object({
   productId: z.string(),
   startDate: z.string(),
   endDate: z.string(),
+  addressId: z.string().optional(),
   mode: z.enum(["EVERYDAY", "CUSTOM"]),
   defaultQuantity: z.number().nonnegative(),
   days: z

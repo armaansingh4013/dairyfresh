@@ -1,9 +1,16 @@
-import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../contexts/CartContext.jsx";
+import AccountMenu from "../components/AccountMenu.jsx";
 
 export default function MarketingLayout({ user, onLogout, children }) {
   const { itemCount } = useCart();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="page-shell">
@@ -12,11 +19,11 @@ export default function MarketingLayout({ user, onLogout, children }) {
           <div className="brand">
             <span className="brand-dot" />
             <div>
-              <strong>DairyDaily</strong>
+              <strong>Mazara Dairy</strong>
               <p>Fresh dairy subscriptions</p>
             </div>
           </div>
-          <nav className="nav-links">
+          <nav className="nav-links nav-links-desktop">
             <NavLink to="/" end>
               Home
             </NavLink>
@@ -31,24 +38,71 @@ export default function MarketingLayout({ user, onLogout, children }) {
             </Link>
             {user ? (
               <>
-                <Link className="ghost" to="/app/dashboard">
+                <Link className="ghost nav-dashboard-link" to="/app/dashboard">
                   Dashboard
                 </Link>
-                <button className="ghost" onClick={onLogout}>
-                  Logout
-                </button>
+                <AccountMenu onLogout={onLogout} />
               </>
             ) : (
               <>
-                <Link className="ghost" to="/login">
+                <Link className="ghost nav-auth-link" to="/login">
                   Login
                 </Link>
-                <Link className="primary" to="/signup">
+                <Link className="primary nav-auth-link" to="/signup">
                   Sign Up
                 </Link>
               </>
             )}
+            <button
+              className="ghost nav-menu-toggle"
+              type="button"
+              aria-expanded={menuOpen}
+              aria-label="Toggle navigation menu"
+              onClick={() => setMenuOpen((current) => !current)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
           </div>
+          {menuOpen ? (
+            <div className="mobile-nav-panel">
+              <Link className="ghost wide" to="/">
+                Home
+              </Link>
+              <Link className="ghost wide" to="/products">
+                Products
+              </Link>
+              <Link className="ghost wide" to="/about">
+                About
+              </Link>
+              <Link className="ghost wide" to="/contact">
+                Contact
+              </Link>
+              {user ? (
+                <>
+                  <Link className="ghost wide" to="/app/dashboard">
+                    Dashboard
+                  </Link>
+                  <Link className="ghost wide" to="/app/profile">
+                    Profile
+                  </Link>
+                  <button className="ghost wide" type="button" onClick={onLogout}>
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link className="ghost wide" to="/login">
+                    Login
+                  </Link>
+                  <Link className="primary wide" to="/signup">
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
+          ) : null}
         </header>
         {children}
       </div>

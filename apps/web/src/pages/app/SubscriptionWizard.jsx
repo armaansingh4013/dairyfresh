@@ -16,6 +16,7 @@ export default function SubscriptionWizard({ user }) {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [status, setStatus] = useState("");
   const [addressForm, setAddressForm] = useState(createEmptyAddress());
+  const [placedPlan, setPlacedPlan] = useState(null);
 
   const [form, setForm] = useState({
     productId: "",
@@ -30,6 +31,16 @@ export default function SubscriptionWizard({ user }) {
   useEffect(() => {
     loadData();
   }, [user.id]);
+
+  useEffect(() => {
+    if (!placedPlan?.id) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      navigate(`/app/subscriptions/${placedPlan.id}`);
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [navigate, placedPlan]);
 
   async function loadData() {
     try {
@@ -74,7 +85,7 @@ export default function SubscriptionWizard({ user }) {
   }
 
   const selectedProduct = useMemo(
-    () => products.find((p) => p.id === form.productId),
+    () => products.find((p) => p._id === form.productId),
     [products, form.productId]
   );
 
@@ -135,6 +146,7 @@ export default function SubscriptionWizard({ user }) {
       startDate: form.startDate,
       endDate: form.endDate,
       mode: form.mode,
+      addressId: form.addressId,
       defaultQuantity: Number(form.quantity) || 1
     };
 
@@ -156,13 +168,17 @@ export default function SubscriptionWizard({ user }) {
     }
 
     try {
-      await apiPost(`/users/${user.id}/plans`, payload);
-      setStatus("Subscription placed.");
-      navigate("/app/subscriptions");
+      const plan = await apiPost(`/users/${user.id}/plans`, payload);
+      setStatus("");
+      setPlacedPlan(plan);
     } catch {
       setStatus("Unable to create subscription. Check API.");
     }
   }
+
+
+ 
+
 
   return (
     <section className="section-card">
@@ -351,15 +367,21 @@ export default function SubscriptionWizard({ user }) {
         <div className="wizard-step">
           <h3>Confirm & pay</h3>
           <div className="summary-card">
-            <p>Product: {selectedProduct?.name || "-"}</p>
+            <p>Product: {selectedProduct?.name ||"-"}</p>
             <p>
-              Dates: {form.startDate} to {form.endDate}
+              Dates: {form.startDate} to {form.endDate} 
             </p>
-            <p>Quantity: {form.quantity}</p>
+            <p>
+            Total days: {totalDays}
+            </p>
+            <p>Per Dayn Quantity: {form.quantity}</p>
+            <p>
+              Total Quantity: {totalDays * (Number(form.quantity) || 1)}
+            </p>
             <p>Estimated total: INR {estimate.toFixed(0)}</p>
           </div>
           <button className="primary" style={{marginTop: "20px"}} onClick={submitPlan}>
-            Pay Now & Place Order
+            Cash On Delivery & Place Order
           </button>
         </div>
       )}
@@ -375,6 +397,24 @@ export default function SubscriptionWizard({ user }) {
         )}
       </div>
       {status && <p className="message">{status}</p>}
+      {placedPlan ? (
+        <div className="modal-overlay" onClick={() => navigate(`/app/subscriptions/${placedPlan.id}`)}>
+          <div className="modal-card order-success-card" onClick={(event) => event.stopPropagation()}>
+            <div className="success-tick" aria-hidden="true">
+              <svg viewBox="0 0 52 52">
+                <circle className="success-tick-circle" cx="26" cy="26" r="25" fill="none" />
+                <path className="success-tick-check" fill="none" d="M14 27 22 35 38 18" />
+              </svg>
+            </div>
+            <p className="section-kicker">Subscription Placed</p>
+            <h3>Your subscription is active now.</h3>
+            <p className="message">
+              {selectedProduct?.name || "Subscription"} has been created and linked orders are being
+              prepared. Taking you to subscription details now.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

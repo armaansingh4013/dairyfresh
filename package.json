@@ -20,11 +20,7 @@
     "concurrently": "^8.2.2",
     "metro": "^0.80.10",
     "@react-native-community/cli-server-api": "^11.3.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "overrides": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
   }
 }

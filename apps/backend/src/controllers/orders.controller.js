@@ -1,4 +1,4 @@
-import { createOrder, listUserOrders } from "../services/orders.service.js";
+import { createOrder, listPlanOrders, listUserOrders } from "../services/orders.service.js";
 import { badRequest } from "../utils/response.js";
 import { createOrderSchema } from "../validations/orders.validation.js";
 
@@ -12,5 +12,10 @@ export async function createOrderController(req, res) {
 
 export async function getUserOrdersController(req, res) {
   const orders = await listUserOrders(req.params.userId);
+  res.json(orders);
+}
+
+export async function getPlanOrdersController(req, res) {
+  const orders = await listPlanOrders(req.params.planId);
   res.json(orders);
 }

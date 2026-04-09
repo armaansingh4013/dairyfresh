@@ -22,6 +22,7 @@ const PlanSchema = new Schema(
   {
     userId: { type: ObjectId, ref: "User", required: true },
     productId: { type: ObjectId, ref: "Product", required: true },
+    addressId: ObjectId,
     mode: { type: String, enum: ["EVERYDAY", "CUSTOM"], required: true },
     startDate: Date,
     endDate: Date,

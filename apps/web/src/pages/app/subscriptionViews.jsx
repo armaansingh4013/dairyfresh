@@ -1,7 +1,14 @@
 import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "../../services/api.js";
 import { toDateString } from "../../utils/date.js";
+
+export const SUBSCRIPTION_TABS = {
+  ACTIVE: "active",
+  CANCELLED: "cancelled",
+  COMPLETED: "completed",
+  HISTORY: "history"
+};
 
 export async function loadUserPlans(userId) {
   const data = await apiGet(`/users/${userId}/plans`);
@@ -67,33 +74,27 @@ export function buildDeliveredHistory(plans) {
 }
 
 export function SubscriptionPageNav() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || SUBSCRIPTION_TABS.ACTIVE;
+  const tabs = [
+    { id: SUBSCRIPTION_TABS.ACTIVE, label: "Active" },
+    // { id: SUBSCRIPTION_TABS.CANCELLED, label: "Cancelled" },
+    { id: SUBSCRIPTION_TABS.COMPLETED, label: "Completed" },
+    // { id: SUBSCRIPTION_TABS.HISTORY, label: "Order History" }
+  ];
+
   return (
     <div className="mode-toggle subscriptions-tabs">
-      <NavLink
-        end
-        className={({ isActive }) => (isActive ? "toggle active" : "toggle")}
-        to="/app/subscriptions"
-      >
-        Active
-      </NavLink>
-      <NavLink
-        className={({ isActive }) => (isActive ? "toggle active" : "toggle")}
-        to="/app/subscriptions/cancelled"
-      >
-        Cancelled
-      </NavLink>
-      <NavLink
-        className={({ isActive }) => (isActive ? "toggle active" : "toggle")}
-        to="/app/subscriptions/completed"
-      >
-        Completed
-      </NavLink>
-      <NavLink
-        className={({ isActive }) => (isActive ? "toggle active" : "toggle")}
-        to="/app/subscriptions/history"
-      >
-        Order History
-      </NavLink>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          className={activeTab === tab.id ? "toggle active" : "toggle"}
+          onClick={() => setSearchParams(tab.id === SUBSCRIPTION_TABS.ACTIVE ? {} : { tab: tab.id })}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -104,7 +105,7 @@ export function PlanCard({ plan, showEdit = false }) {
   ).length;
 
   return (
-    <div className="plan-card">
+    <Link className="plan-card plan-card-link" to={`/app/subscriptions/${plan.id}`}>
       <div>
         <strong>{plan.product?.name || "Product"}</strong>
         <p>
@@ -115,10 +116,10 @@ export function PlanCard({ plan, showEdit = false }) {
         <p>Delivered orders: {deliveredCount}</p>
       </div>
       {showEdit ? (
-        <Link className="ghost" to={`/app/subscriptions/${plan.id}`}>
-          Edit Subscription
-        </Link>
+        <span className="ghost inline-button">
+          View Subscription
+        </span>
       ) : null}
-    </div>
+    </Link>
   );
 }

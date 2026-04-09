@@ -120,3 +120,8 @@ export async function listUserOrders(userId) {
   const orders = await Order.find({ userId }).sort({ createdAt: -1 });
   return Promise.all(orders.map((order) => hydrateOrder(order)));
 }
+
+export async function listPlanOrders(planId) {
+  const orders = await Order.find({ planId }).sort({ createdAt: -1 });
+  return Promise.all(orders.map((order) => hydrateOrder(order)));
+}

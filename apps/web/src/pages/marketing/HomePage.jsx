@@ -33,7 +33,7 @@ export default function HomePage() {
     <>
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Dairy Delivery</p>
+          <p className="eyebrow">Mazara Dairy</p>
           <h1>Pure milk, same-day delivery, every morning.</h1>
           <p className="lead">
             Fresh dairy subscriptions with flexible plans. Pause anytime, change
