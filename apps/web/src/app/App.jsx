@@ -8,6 +8,7 @@ import HomePage from "../pages/marketing/HomePage.jsx";
 import ProductsPage from "../pages/marketing/ProductsPage.jsx";
 import AboutPage from "../pages/marketing/AboutPage.jsx";
 import ContactPage from "../pages/marketing/ContactPage.jsx";
+import PrivacyPage from "../pages/marketing/PrivacyPage.jsx";
 
 import LoginPage from "../pages/LoginPage.jsx";
 import SignupPage from "../pages/auth/SignupPage.jsx";
@@ -92,6 +93,7 @@ export default function App() {
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/cart" element={<CartPage user={user} />} />
                 <Route path="/login" element={<LoginPage onLogin={handleLoginSuccess} />} />
                 <Route path="/signup" element={<SignupPage onLogin={handleLoginSuccess} />} />

@@ -30,6 +30,7 @@ export default function MarketingLayout({ user, onLogout, children }) {
             <NavLink to="/products">Products</NavLink>
             <NavLink to="/about">About</NavLink>
             <NavLink to="/contact">Contact</NavLink>
+            <NavLink to="/privacy">Privacy</NavLink>
           </nav>
           <div className="nav-actions">
             <Link className="ghost cart-link" to="/cart">
@@ -79,6 +80,9 @@ export default function MarketingLayout({ user, onLogout, children }) {
               <Link className="ghost wide" to="/contact">
                 Contact
               </Link>
+              <Link className="ghost wide" to="/privacy">
+                Privacy
+              </Link>
               {user ? (
                 <>
                   <Link className="ghost wide" to="/app/dashboard">
@@ -105,6 +109,10 @@ export default function MarketingLayout({ user, onLogout, children }) {
           ) : null}
         </header>
         {children}
+        <footer className="site-footer">
+          <p>Fresh dairy subscriptions with direct doorstep delivery.</p>
+          <Link to="/privacy">Privacy Policy</Link>
+        </footer>
       </div>
     </div>
   );

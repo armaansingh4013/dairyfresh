@@ -19,6 +19,9 @@
       "eas": {
         "projectId": "0c49776c-8e32-44e5-ba18-75ea68f8e450"
       }
+    },
+    "android": {
+      "package": "com.armaansingh40132018.mazaradairy"
     }
   }
 }

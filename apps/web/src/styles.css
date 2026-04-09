@@ -218,6 +218,25 @@ select {
   gap: 28px;
 }
 
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px 8px;
+  color: var(--muted);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .hero,
 .planner-layout,
 .marketing-hero,
@@ -443,6 +462,27 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 18px;
+}
+
+.privacy-page {
+  display: grid;
+  gap: 24px;
+}
+
+.privacy-note {
+  padding: 22px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(216, 107, 47, 0.1), rgba(255, 255, 255, 0.72));
+  border: 1px solid rgba(216, 107, 47, 0.16);
+}
+
+.privacy-note h3,
+.privacy-note p {
+  margin-bottom: 0;
+}
+
+.privacy-note a {
+  color: var(--accent-strong);
 }
 
 
@@ -1274,6 +1314,11 @@ h2 {
   .subscriptions-tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
