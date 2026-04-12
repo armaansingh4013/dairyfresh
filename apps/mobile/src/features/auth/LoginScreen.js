@@ -19,7 +19,7 @@ export default function LoginScreen({
     <Screen>
       <Card style={styles.hero}>
         <Text style={styles.kicker}>Mobile Login</Text>
-        <Text style={styles.title}>Sign in with the phone nuumber.</Text>
+        <Text style={styles.title}>Sign in with the phone number.</Text>
         {/* <Text style={styles.copy}>
           Demo mode uses OTP `1111`. Set `EXPO_PUBLIC_API_URL` if the API is not
           running on the same host as Expo.

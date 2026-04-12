@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_URL || "https://dairyfresh.onrender.com";
+export const API_BASE = import.meta.env.VITE_API_URL || "https://dairyfresh-1.onrender.com";
 
 function getSessionToken() {
   try {

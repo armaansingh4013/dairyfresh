@@ -1,5 +1,8 @@
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const resend_key = process.env.RESEND_API_KEY;
 
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 5);
 
@@ -56,34 +59,61 @@ export async function sendOtpEmail({ to, otp, name }) {
     throw new Error("Missing Gmail SMTP env variables");
   }
 
-  console.log(`Sending OTP email to ${to} with OTP ${otp}`);
-  
-  const transporter = getTransporter();
   const safeName = name?.trim() || "there";
+  const resend = new Resend(resend_key);
+  console.log(`Sending OTP email to ${to} with OTP ${otp}`);
+  try {
+    const response = await resend.emails.send({
+      from: "Mazara Dairy <no-reply@majara.in>", // your verified domain
+      to,
+        subject: "Your OTP code",
+        text: `Hi ${safeName}, your OTP is ${otp}. It expires in ${OTP_EXPIRES_MINUTES} minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+            <h2>Your OTP Code</h2>
+            <p>Hi ${safeName},</p>
+            <p>Your OTP is:</p>
+            <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; margin: 16px 0;">
+              ${otp}
+            </div>
+            <p>This OTP will expire in ${OTP_EXPIRES_MINUTES} minutes.</p>
+            <p>If you did not request this, you can ignore this email.</p>
+          </div>
+        `
+    });
 
-  const info = await transporter.sendMail({
-    from: `"Dairy App" <${process.env.GMAIL_USER}>`,
-    to,
-    subject: "Your OTP code",
-    text: `Hi ${safeName}, your OTP is ${otp}. It expires in ${OTP_EXPIRES_MINUTES} minutes.`,
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-        <h2>Your OTP Code</h2>
-        <p>Hi ${safeName},</p>
-        <p>Your OTP is:</p>
-        <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; margin: 16px 0;">
-          ${otp}
-        </div>
-        <p>This OTP will expire in ${OTP_EXPIRES_MINUTES} minutes.</p>
-        <p>If you did not request this, you can ignore this email.</p>
-      </div>
-    `
-  });
+    console.log("Email sent:", response);
+    return response;
+  } catch (err) {
+    console.error("Error:", err);
+    return null;
+  }
+  // const transporter = getTransporter();
+  // const safeName = name?.trim() || "there";
 
-  return {
-    messageId: info.messageId,
-    accepted: info.accepted
-  };
+  // const info = await transporter.sendMail({
+  //   from: `"Dairy App" <${process.env.GMAIL_USER}>`,
+  //   to,
+  //   subject: "Your OTP code",
+  //   text: `Hi ${safeName}, your OTP is ${otp}. It expires in ${OTP_EXPIRES_MINUTES} minutes.`,
+  //   html: `
+  //     <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+  //       <h2>Your OTP Code</h2>
+  //       <p>Hi ${safeName},</p>
+  //       <p>Your OTP is:</p>
+  //       <div style="font-size: 28px; font-weight: bold; letter-spacing: 6px; margin: 16px 0;">
+  //         ${otp}
+  //       </div>
+  //       <p>This OTP will expire in ${OTP_EXPIRES_MINUTES} minutes.</p>
+  //       <p>If you did not request this, you can ignore this email.</p>
+  //     </div>
+  //   `
+  // });
+
+  // return {
+  //   messageId: info.messageId,
+  //   accepted: info.accepted
+  // };
 }
 
 export function verifyOtp({

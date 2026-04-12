@@ -9,11 +9,11 @@ export default function ContactPage() {
         <div className="feature">
           <h3>Support</h3>
           <p>Call or WhatsApp: +91 90000 00000</p>
-          <p>Email: hello@dairydaily.in</p>
+          <p>Email: majaradairy@gmail.com</p>
         </div>
         <div className="feature">
           <h3>Address</h3>
-          <p>12 Dairy Lane, Pune, Maharashtra</p>
+          <p>Vill majara , Dist - UNA , Himachal Praqdesh 174301</p>
           <p>Open 6:00 AM - 8:00 PM</p>
         </div>
         <div className="feature">

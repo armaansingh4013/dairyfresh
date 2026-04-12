@@ -37,7 +37,10 @@ export default function LoginPage({ onLogin, mode = "login" }) {
       setStatus(isSignup ? "Enter email or phone first." : "Enter phone or email first.");
       return;
     }
-
+    if(!isEmailValue(contact.trim())){
+      setStatus("Enter a valid email.");
+      return;
+    }
     if (isSignup && !name.trim()) {
       setStatus("Enter name first.");
       return;
@@ -97,13 +100,14 @@ export default function LoginPage({ onLogin, mode = "login" }) {
           </label>
         ) : null}
         <label className="field">
-          <span>{isSignup ? "Email or Phone" : "Phone or Email"}</span>
+          <span>Email</span>
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder={isSignup ? "name@example.com or 1231231231" : "1231231231 or name@example.com"}
+            placeholder="name@example.com"
           />
         </label>
+        {status && <p className="message" style={{color:"Red"}}>{status}</p>}
         <button className="ghost" type="button" onClick={handleRequestOtp}>
           {otpSent ? "Resend OTP" : "Send OTP"}
         </button>
@@ -114,7 +118,7 @@ export default function LoginPage({ onLogin, mode = "login" }) {
         <button className="primary" type="submit">
           {isSignup ? "Create account" : "Login"}
         </button>
-        {status && <p className="message">{status}</p>}
+        {/* {status && <p className="message" style={{color:"Red"}}>{status}</p>} */}
       </form>
     </section>
   );

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
         <h3>Questions or requests</h3>
         <p>
           For privacy-related requests, contact{" "}
-          <a href="mailto:hello@dairydaily.in">hello@dairydaily.in</a> or call
+          <a href="mailto:hello@dairydaily.in">majaradairy@gmail.com</a> or call
           +91 90000 00000.
         </p>
       </div>
