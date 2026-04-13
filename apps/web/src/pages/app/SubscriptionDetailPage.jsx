@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { apiGet, apiPatch, apiPost } from "../../services/api.js";
+import { useNotifications } from "../../contexts/NotificationContext.jsx";
 import { datesBetween, toDateString } from "../../utils/date.js";
 
 const DETAIL_TABS = {
@@ -43,13 +44,16 @@ export default function SubscriptionDetailPage({ user }) {
   const [status, setStatus] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedQty, setSelectedQty] = useState(0);
+  const [loadingPlan, setLoadingPlan] = useState(false);
   const currentTab = searchParams.get("tab") || DETAIL_TABS.TODAY;
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadPlan();
   }, [planId, user.id]);
 
   async function loadPlan() {
+    setLoadingPlan(true);
     try {
       const [plansData, planOrdersData] = await Promise.all([
         apiGet(`/users/${user.id}/plans`),
@@ -75,6 +79,9 @@ export default function SubscriptionDetailPage({ user }) {
     } catch {
       setPlan(null);
       setPlanOrders([]);
+      notify({ type: "error", message: "Unable to load subscription details." });
+    } finally {
+      setLoadingPlan(false);
     }
   }
 
@@ -223,6 +230,12 @@ export default function SubscriptionDetailPage({ user }) {
           : "No delivery address set"}
       </p>
       <p>Default quantity: {plan.defaultQuantity}</p>
+      {loadingPlan ? (
+        <p className="inline-loader">
+          <span className="button-spinner" aria-hidden="true" />
+          Loading subscription details...
+        </p>
+      ) : null}
 
       <section className="detail-panel subscription-orders-panel">
         <div className="summary-row">

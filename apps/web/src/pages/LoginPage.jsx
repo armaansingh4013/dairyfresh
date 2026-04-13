@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiPost } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 function isEmailValue(value) {
   return /\S+@\S+\.\S+/.test(value.trim());
@@ -27,8 +28,11 @@ export default function LoginPage({ onLogin, mode = "login" }) {
   const [otp, setOtp] = useState("");
   const [status, setStatus] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [requestingOtp, setRequestingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { notify } = useNotifications();
 
   async function handleRequestOtp() {
     setStatus("");
@@ -46,12 +50,17 @@ export default function LoginPage({ onLogin, mode = "login" }) {
       return;
     }
 
+    setRequestingOtp(true);
     try {
       const payload = await apiPost("/auth/request-otp", buildAuthPayload(contact, name));
       setOtpSent(true);
       setStatus(payload.message || "OTP sent.");
+      notify({ type: "success", message: payload.message || "OTP sent successfully." });
     } catch (error) {
       setStatus(error.message);
+      notify({ type: "error", message: error.message || "Unable to send OTP." });
+    } finally {
+      setRequestingOtp(false);
     }
   }
 
@@ -69,15 +78,20 @@ export default function LoginPage({ onLogin, mode = "login" }) {
       return;
     }
 
+    setVerifyingOtp(true);
     try {
       const payload = await apiPost("/auth/verify-otp", {
         ...buildAuthPayload(contact, name),
         otp: otp.trim()
       });
       onLogin(payload);
+      notify({ type: "success", message: isSignup ? "Account created successfully." : "Logged in successfully." });
       navigate(searchParams.get("redirect") || "/app/dashboard");
     } catch (error) {
       setStatus(error.message);
+      notify({ type: "error", message: error.message || "Unable to verify OTP." });
+    } finally {
+      setVerifyingOtp(false);
     }
   }
 
@@ -108,15 +122,17 @@ export default function LoginPage({ onLogin, mode = "login" }) {
           />
         </label>
         {status && <p className="message">{status}</p>}
-        <button className="ghost" type="button" onClick={handleRequestOtp}>
-          {otpSent ? "Resend OTP" : "Send OTP"}
+        <button className="ghost" type="button" onClick={handleRequestOtp} disabled={requestingOtp || verifyingOtp}>
+          {requestingOtp ? <span className="button-spinner" aria-hidden="true" /> : null}
+          {requestingOtp ? "Sending OTP..." : otpSent ? "Resend OTP" : "Send OTP"}
         </button>
         <label className="field">
           <span>OTP</span>
           <input value={otp} onChange={(e) => setOtp(e.target.value)} />
         </label>
-        <button className="primary" type="submit">
-          {isSignup ? "Create account" : "Login"}
+        <button className="primary" type="submit" disabled={verifyingOtp || requestingOtp}>
+          {verifyingOtp ? <span className="button-spinner" aria-hidden="true" /> : null}
+          {verifyingOtp ? (isSignup ? "Creating account..." : "Logging in...") : isSignup ? "Create account" : "Login"}
         </button>
         {/* {status && <p className="message" style={{color:"Red"}}>{status}</p>} */}
       </form>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiGet, apiPost } from "../services/api.js";
 import { useCart } from "../contexts/CartContext.jsx";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 function formatAddress(address) {
   return [address.houseNumber, address.line1, address.line2, address.city, address.state, address.postalCode]
@@ -19,6 +20,8 @@ export default function CartPage({ user }) {
   const [status, setStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [placedOrder, setPlacedOrder] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const { notify } = useNotifications();
 
   useEffect(() => {
     async function loadAddresses() {
@@ -28,6 +31,7 @@ export default function CartPage({ user }) {
         return;
       }
 
+      setLoadingAddresses(true);
       try {
         const data = await apiGet(`/users/${user.id}/addresses`);
         const nextAddresses = Array.isArray(data) ? data : [];
@@ -38,6 +42,8 @@ export default function CartPage({ user }) {
       } catch {
         setAddresses([]);
         setAddressId("");
+      } finally {
+        setLoadingAddresses(false);
       }
     }
 
@@ -86,8 +92,10 @@ export default function CartPage({ user }) {
       });
       clearCart();
       setPlacedOrder(order);
+      notify({ type: "success", message: "Order placed successfully." });
     } catch (error) {
       setStatus(error.message || "Unable to place order.");
+      notify({ type: "error", message: error.message || "Unable to place order." });
     } finally {
       setIsSubmitting(false);
     }
@@ -171,6 +179,12 @@ export default function CartPage({ user }) {
                 ))}
               </select>
             </label>
+            {loadingAddresses ? (
+              <p className="inline-loader">
+                <span className="button-spinner" aria-hidden="true" />
+                Loading addresses...
+              </p>
+            ) : null}
             {!addresses.length ? (
               <p className="message">
                 No saved address found. Add one from{" "}
@@ -197,7 +211,8 @@ export default function CartPage({ user }) {
             Keep Shopping
           </Link>
           <button className="primary" type="button" onClick={handleCheckout} disabled={isSubmitting}>
-            {user ? "Pay and Order" : "Login to Order"}
+            {isSubmitting ? <span className="button-spinner" aria-hidden="true" /> : null}
+            {isSubmitting ? "Placing order..." : user ? "Pay and Order" : "Login to Order"}
           </button>
         </div>
         {status ? <p className="message">{status}</p> : null}

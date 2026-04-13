@@ -1,21 +1,39 @@
-import { listAdminSubscriptions, getAdminReportsSummary } from "../services/admin.service.js";
+import {
+  getAdminCustomerDetail,
+  getAdminReportsSummary,
+  getAdminSubscriptionDetail,
+  listAdminCustomers,
+  listAdminDailyDeliveries,
+  listAdminSubscriptions
+} from "../services/admin.service.js";
 import { generateInvoices, listAdminInvoices } from "../services/billing.service.js";
-import { generateDeliveries, listDailyDeliveries } from "../services/deliveries.service.js";
-import { listTodaysOrders } from "../services/orders.service.js";
+import { generateDeliveries } from "../services/deliveries.service.js";
 import { badRequest } from "../utils/response.js";
 
 export async function getDailyDeliveries(req, res) {
   const date = req.query.date ? new Date(String(req.query.date)) : new Date();
-  // res.json(await listDailyDeliveries(date));
-  res.json(await listTodaysOrders(date));
+  res.json(await listAdminDailyDeliveries(date));
 }
 
 export async function getSubscriptionsSummary(req, res) {
-  res.json(await listAdminSubscriptions(false));
+  const plans = await listAdminSubscriptions(false);
+  res.json(plans.filter((plan) => plan.status === "ACTIVE"));
 }
 
 export async function getSubscriptions(req, res) {
   res.json(await listAdminSubscriptions(false));
+}
+
+export async function getSubscriptionDetail(req, res) {
+  res.json(await getAdminSubscriptionDetail(req.params.planId));
+}
+
+export async function getCustomers(req, res) {
+  res.json(await listAdminCustomers());
+}
+
+export async function getCustomerDetail(req, res) {
+  res.json(await getAdminCustomerDetail(req.params.customerId));
 }
 
 export async function getAdminInvoices(req, res) {

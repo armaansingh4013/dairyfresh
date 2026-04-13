@@ -83,6 +83,54 @@ body {
   height: 20px;
 }
 
+.toast-stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: grid;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.toast {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(34, 29, 24, 0.1);
+  box-shadow: 0 18px 30px rgba(34, 29, 24, 0.14);
+  background: rgba(255, 250, 242, 0.98);
+  color: var(--ink);
+  text-align: left;
+}
+
+.toast:hover {
+  transform: none;
+}
+
+.toast-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.toast-success .toast-dot {
+  background: #2f8f63;
+}
+
+.toast-error .toast-dot {
+  background: #c14834;
+}
+
+.toast-info .toast-dot {
+  background: var(--accent);
+}
+
 .account-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -193,6 +241,32 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;
+}
+
+.button-spinner {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+.inline-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.page-loader {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
 }
 
 input,
@@ -1389,5 +1463,11 @@ h2 {
 
   .subscriptions-tabs {
     grid-template-columns: 1fr;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

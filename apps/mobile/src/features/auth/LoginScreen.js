@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Card from "../../components/Card";
 import Screen from "../../components/Screen";
 import { colors, radii } from "../../theme";
@@ -10,6 +10,7 @@ export default function LoginScreen({
   status,
   otpRequested,
   loading,
+  otpLoading,
   onChangePhone,
   onChangeOtp,
   onRequestOtp,
@@ -29,10 +30,17 @@ export default function LoginScreen({
       <Card>
         <View style={styles.form}>
           <Field label="Email" value={phone} onChangeText={onChangePhone} />
-          <Pressable style={[styles.button, styles.ghostButton]} onPress={onRequestOtp}>
-            <Text style={styles.ghostButtonLabel}>
-              {otpRequested ? "Resend OTP" : "Send OTP"}
-            </Text>
+          <Pressable
+            style={[styles.button, styles.ghostButton, otpLoading && styles.buttonDisabled]}
+            onPress={onRequestOtp}
+            disabled={otpLoading || loading}
+          >
+            <View style={styles.buttonRow}>
+              {otpLoading ? <ActivityIndicator size="small" color={colors.ink} /> : null}
+              <Text style={styles.ghostButtonLabel}>
+                {otpLoading ? "Sending OTP..." : otpRequested ? "Resend OTP" : "Send OTP"}
+              </Text>
+            </View>
           </Pressable>
           <Field label="OTP" value={otp} onChangeText={onChangeOtp} />
           <Pressable
@@ -40,7 +48,10 @@ export default function LoginScreen({
             disabled={loading}
             onPress={onLogin}
           >
-            <Text style={styles.buttonLabel}>{loading ? "Signing in..." : "Login"}</Text>
+            <View style={styles.buttonRow}>
+              {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : null}
+              <Text style={styles.buttonLabel}>{loading ? "Signing in..." : "Login"}</Text>
+            </View>
           </Pressable>
           {status ? <Text style={styles.status}>{status}</Text> : null}
         </View>
@@ -110,6 +121,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: radii.pill,
     backgroundColor: colors.accent
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
   },
   buttonDisabled: {
     opacity: 0.65

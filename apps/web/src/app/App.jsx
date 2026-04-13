@@ -23,6 +23,8 @@ import SubscriptionWizard from "../pages/app/SubscriptionWizard.jsx";
 import SubscriptionDetailPage from "../pages/app/SubscriptionDetailPage.jsx";
 import { apiGet } from "../services/api.js";
 import { CartProvider } from "../contexts/CartContext.jsx";
+import { NotificationProvider } from "../contexts/NotificationContext.jsx";
+import ToastViewport from "../components/ToastViewport.jsx";
 
 export default function App() {
   const [session, setSession] = useState(() => {
@@ -77,73 +79,76 @@ export default function App() {
   }
 
   if (!authReady) {
-    return null;
+    return <div className="page-loader">Checking your session...</div>;
   }
 
   return (
     <BrowserRouter>
-      <CartProvider>
-      <Routes>
-        <Route
-          path="/*"
-          element={
-            <MarketingLayout user={user} onLogout={handleLogout}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="/cart" element={<CartPage user={user} />} />
-                <Route path="/login" element={<LoginPage onLogin={handleLoginSuccess} />} />
-                <Route path="/signup" element={<SignupPage onLogin={handleLoginSuccess} />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute user={user}>
-                      <Navigate to="/app/dashboard" replace />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </MarketingLayout>
-          }
-        />
+      <NotificationProvider>
+        <CartProvider>
+          <Routes>
+            <Route
+              path="/*"
+              element={
+                <MarketingLayout user={user} onLogout={handleLogout}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
+                    <Route path="/cart" element={<CartPage user={user} />} />
+                    <Route path="/login" element={<LoginPage onLogin={handleLoginSuccess} />} />
+                    <Route path="/signup" element={<SignupPage onLogin={handleLoginSuccess} />} />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute user={user}>
+                          <Navigate to="/app/dashboard" replace />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </MarketingLayout>
+              }
+            />
 
-        <Route
-          path="/app/*"
-          element={
-            <ProtectedRoute user={user}>
-              <AppLayout user={user} onLogout={handleLogout}>
-                <Routes>
-                  <Route path="dashboard" element={<DashboardPage user={user} />} />
-                  <Route path="subscriptions" element={<SubscriptionsPage user={user} />} />
-                  <Route
-                    path="subscriptions/cancelled"
-                    element={<Navigate to="/app/subscriptions?tab=cancelled" replace />}
-                  />
-                  <Route
-                    path="subscriptions/completed"
-                    element={<Navigate to="/app/subscriptions?tab=completed" replace />}
-                  />
-                  <Route
-                    path="subscriptions/history"
-                    element={<Navigate to="/app/subscriptions?tab=history" replace />}
-                  />
-                  <Route path="subscriptions/:planId" element={<SubscriptionDetailPage user={user} />} />
-                  <Route path="billing" element={<BillingPage user={user} />} />
-                  <Route path="cart" element={<CartPage user={user} />} />
-                  <Route path="profile" element={<ProfilePage user={user} />} />
-                  <Route path="orders" element={<OrdersPage user={user} />} />
-                  <Route path="ongoing" element={<Navigate to="/app/subscriptions" replace />} />
-                  <Route path="start" element={<SubscriptionWizard user={user} />} />
-                </Routes>
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-      </CartProvider>
+            <Route
+              path="/app/*"
+              element={
+                <ProtectedRoute user={user}>
+                  <AppLayout user={user} onLogout={handleLogout}>
+                    <Routes>
+                      <Route path="dashboard" element={<DashboardPage user={user} />} />
+                      <Route path="subscriptions" element={<SubscriptionsPage user={user} />} />
+                      <Route
+                        path="subscriptions/cancelled"
+                        element={<Navigate to="/app/subscriptions?tab=cancelled" replace />}
+                      />
+                      <Route
+                        path="subscriptions/completed"
+                        element={<Navigate to="/app/subscriptions?tab=completed" replace />}
+                      />
+                      <Route
+                        path="subscriptions/history"
+                        element={<Navigate to="/app/subscriptions?tab=history" replace />}
+                      />
+                      <Route path="subscriptions/:planId" element={<SubscriptionDetailPage user={user} />} />
+                      <Route path="billing" element={<BillingPage user={user} />} />
+                      <Route path="cart" element={<CartPage user={user} />} />
+                      <Route path="profile" element={<ProfilePage user={user} />} />
+                      <Route path="orders" element={<OrdersPage user={user} />} />
+                      <Route path="ongoing" element={<Navigate to="/app/subscriptions" replace />} />
+                      <Route path="start" element={<SubscriptionWizard user={user} />} />
+                    </Routes>
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <ToastViewport />
+        </CartProvider>
+      </NotificationProvider>
     </BrowserRouter>
   );
 }

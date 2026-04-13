@@ -90,7 +90,9 @@ export default function DashboardPage({ user }) {
           </div>
         ) : (
           <p className="empty-state">
-            {productsStatus === "ready"
+            {productsStatus === "loading"
+              ? "Loading products..."
+              : productsStatus === "ready"
               ? "No products yet. Add products in Admin."
               : "Unable to load products. Start the API."}
           </p>

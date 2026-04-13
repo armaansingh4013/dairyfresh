@@ -1,55 +1,61 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiGet } from "../services/api.js";
 
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString();
+}
+
 export default function CustomersPage() {
-  const [plans, setPlans] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadSubscriptions();
+    loadCustomers();
   }, []);
 
-  async function loadSubscriptions() {
+  async function loadCustomers() {
     try {
-      const data = await apiGet("/admin/subscriptions/summary");
-      setPlans(Array.isArray(data) ? data : []);
+      const data = await apiGet("/admin/customers");
+      setCustomers(Array.isArray(data) ? data : []);
     } catch {
-      setPlans([]);
+      setCustomers([]);
     }
   }
 
-  const activePlans = useMemo(
-    () => plans.filter((plan) => plan.status === "ACTIVE"),
-    [plans]
-  );
-
   return (
     <section className="sheet">
-      <h2>Active Subscriptions</h2>
+      <h2>Customers</h2>
       <table>
         <thead>
           <tr>
             <th>Name</th>
             <th>Phone</th>
-            <th>Plan</th>
-            <th>Mode</th>
-            <th>Quantity</th>
-            <th>Status</th>
+            <th>Email</th>
+            <th>Active Plans</th>
+            <th>Total Orders</th>
+            <th>Last Order</th>
           </tr>
         </thead>
         <tbody>
-          {activePlans.map((plan) => (
-            <tr key={plan.id}>
-              <td>{plan.user?.name || "Customer"}</td>
-              <td>{plan.user?.phone || "-"}</td>
-              <td>{plan.product?.name || "Product"}</td>
-              <td>{plan.mode}</td>
-              <td>{plan.defaultQuantity}</td>
-              <td>{plan.status}</td>
+          {customers.map((customer) => (
+            <tr
+              key={customer.id}
+              className="data-row"
+              onClick={() => navigate(`/customers/${customer.id}`)}
+            >
+              <td>{customer.name || "Customer"}</td>
+              <td>{customer.phone || "-"}</td>
+              <td>{customer.email || "-"}</td>
+              <td>{customer.activePlans || 0}</td>
+              <td>{customer.totalOrders || 0}</td>
+              <td>{formatDate(customer.lastOrderDate)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {!activePlans.length && <p className="empty">No active subscriptions.</p>}
+      {!customers.length && <p className="empty">No customers found.</p>}
     </section>
   );
 }

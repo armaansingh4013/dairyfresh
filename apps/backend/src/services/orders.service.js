@@ -128,16 +128,68 @@ export async function listPlanOrders(planId) {
 
 
 export async function listTodaysOrders(date = new Date()) {
-   const startOfDay = new Date(date);
-   startOfDay.setHours(0, 0, 0, 0);
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
 
-   const endOfDay = new Date(date);
-   endOfDay.setHours(23, 59, 59, 999);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
 
-   const orders = await Order.find({
-     date: { $gte: startOfDay, $lte: endOfDay }
-   }).sort({ createdAt: -1 });
+  const orders = await Order.find({
+    date: { $gte: start, $lte: end },
+    status: { $ne: "CANCELLED" }
+  })
+    .sort({ createdAt: -1 })
+    .select("userId addressId type planId date status items createdAt")
+    .populate({
+      path: "userId",
+      select: "name phone addresses"
+    })
+    .populate({
+      path: "items.productId",
+      select: "name unit price"
+    });
 
-   return Promise.all(orders.map((order) => hydrateOrder(order)));
+  return orders.map((order) => {
+    const address =
+      order.userId?.addresses?.find(
+        (entry) => String(entry._id) === String(order.addressId || "")
+      ) || null;
+    const items = (order.items || []).map((item) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.productId?.price || 0);
+
+      return {
+        productId: item.productId?._id?.toString?.() || null,
+        name: item.productId?.name || "Product",
+        unit: item.productId?.unit || "",
+        quantity,
+        unitPrice,
+        lineTotal: Number((quantity * unitPrice).toFixed(2))
+      };
+    });
+
+    return {
+      id: order._id.toString(),
+      type: order.type,
+      status: order.status,
+      date: order.date,
+      createdAt: order.createdAt,
+      customer: {
+        id: order.userId?._id?.toString?.() || null,
+        name: order.userId?.name || "",
+        phone: order.userId?.phone || ""
+      },
+      address: address
+        ? {
+            id: address._id.toString(),
+            line1: address.line1 || "",
+            city: address.city || ""
+          }
+        : null,
+      itemCount: items.length,
+      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      totalAmount: Number(items.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2)),
+      items
+    };
+  });
 }
-

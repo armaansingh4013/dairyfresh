@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPatch, apiPost } from "../services/api.js";
+import { apiGet, apiPost } from "../services/api.js";
+
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString();
+}
 
 export default function OverviewPage() {
   const [deliveries, setDeliveries] = useState([]);
@@ -41,24 +46,13 @@ export default function OverviewPage() {
     }
   }
 
-  async function markDelivered(deliveryId) {
-    setRouteStatus("");
-    try {
-      await apiPatch(`/deliveries/${deliveryId}`, { status: "DELIVERED" });
-      setRouteStatus("Delivery marked as delivered.");
-      loadDeliveries();
-    } catch {
-      setRouteStatus("Unable to update delivery status.");
-    }
-  }
-
   const totalLiters = useMemo(
-    () => deliveries.reduce((sum, item) => sum + (item.quantity || 0), 0),
+    () => deliveries.reduce((sum, item) => sum + (item.totalQuantity || 0), 0),
     [deliveries]
   );
 
   const totalCustomers = useMemo(
-    () => new Set(deliveries.map((item) => item.user?.id || item.userId)).size,
+    () => new Set(deliveries.map((item) => item.customer?.id).filter(Boolean)).size,
     [deliveries]
   );
 
@@ -112,48 +106,26 @@ export default function OverviewPage() {
           <thead>
             <tr>
               <th>Customer</th>
-              <th>Phone</th>
               <th>Address</th>
-              <th>Product</th>
+              <th>Items</th>
               <th>Qty</th>
               <th>Status</th>
               <th>Start Date</th>
               <th>End Date</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {deliveries.map((d) => (
               <tr key={d.id}>
-                <td>{d.user?.name || "Customer"}</td>
-                <td>{d.user?.phone || "-"}</td>
+                <td>{d.customer?.name || "Customer"}</td>
                 <td>
                   {d.address ? `${d.address.line1}, ${d.address.city}` : "Address"}
                 </td>
-                <td>{d.product?.name || "Product"}</td>
-                <td>
-                  {d.quantity} {d.product?.unit || "L"}
-                </td>
+                <td>{d.itemCount || 0}</td>
+                <td>{d.totalQuantity || 0}</td>
                 <td>{d.status || "Pending"}</td>
-                <td>
-                  {d.plan?.startDate
-                    ? new Date(d.plan.startDate).toLocaleDateString()
-                    : "-"}
-                </td>
-                <td>
-                  {d.plan?.endDate
-                    ? new Date(d.plan.endDate).toLocaleDateString()
-                    : "-"}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => markDelivered(d.id)}
-                    disabled={d.status === "DELIVERED"}
-                  >
-                    {d.status === "DELIVERED" ? "Delivered" : "Mark Delivered"}
-                  </button>
-                </td>
+                <td>{formatDate(d.plan?.startDate)}</td>
+                <td>{formatDate(d.plan?.endDate)}</td>
               </tr>
             ))}
           </tbody>

@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiGet } from "../services/api.js";
+
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString();
+}
 
 export default function SubscriptionsPage() {
   const [plans, setPlans] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadPlans();
@@ -27,30 +34,30 @@ export default function SubscriptionsPage() {
             <th>Customer</th>
             <th>Phone</th>
             <th>Product</th>
-            <th>Mode</th>
+            <th>Start Date</th>
+            <th>End Date</th>
             <th>Quantity</th>
             <th>Status</th>
-            <th>Delivered Days</th>
           </tr>
         </thead>
         <tbody>
-          {plans.map((plan) => {
-            const deliveredCount = (plan.deliveries || []).filter(
-              (delivery) => delivery.status === "DELIVERED"
-            ).length;
-
-            return (
-              <tr key={plan.id}>
-                <td>{plan.user?.name || "Customer"}</td>
-                <td>{plan.user?.phone || "-"}</td>
-                <td>{plan.product?.name || "Product"}</td>
-                <td>{plan.mode}</td>
-                <td>{plan.defaultQuantity}</td>
-                <td>{plan.status}</td>
-                <td>{deliveredCount}</td>
-              </tr>
-            );
-          })}
+          {plans.map((plan) => (
+            <tr
+              key={plan.id}
+              className="data-row"
+              onClick={() => navigate(`/subscriptions/${plan.id}`)}
+            >
+              <td>{plan.user?.name || "Customer"}</td>
+              <td>{plan.user?.phone || "-"}</td>
+              <td>{plan.product?.name || "Product"}</td>
+              <td>{formatDate(plan.startDate)}</td>
+              <td>{formatDate(plan.endDate)}</td>
+              <td>
+                {plan.defaultQuantity} {plan.product?.unit || ""}
+              </td>
+              <td>{plan.status}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
       {!plans.length && <p className="empty">No subscriptions found.</p>}

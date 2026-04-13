@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet, apiPost } from "../../services/api.js";
+import { useNotifications } from "../../contexts/NotificationContext.jsx";
 import { datesBetween, toDateString } from "../../utils/date.js";
 import AddressFormFields, {
   createEmptyAddress,
@@ -17,6 +18,10 @@ export default function SubscriptionWizard({ user }) {
   const [status, setStatus] = useState("");
   const [addressForm, setAddressForm] = useState(createEmptyAddress());
   const [placedPlan, setPlacedPlan] = useState(null);
+  const [loadingData, setLoadingData] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [submittingPlan, setSubmittingPlan] = useState(false);
+  const { notify } = useNotifications();
 
   const [form, setForm] = useState({
     productId: "",
@@ -43,6 +48,7 @@ export default function SubscriptionWizard({ user }) {
   }, [navigate, placedPlan]);
 
   async function loadData() {
+    setLoadingData(true);
     try {
       const [productData, addressData] = await Promise.all([
         apiGet("/products"),
@@ -57,6 +63,8 @@ export default function SubscriptionWizard({ user }) {
     } catch {
       setProducts([]);
       setAddresses([]);
+    } finally {
+      setLoadingData(false);
     }
   }
 
@@ -72,6 +80,7 @@ export default function SubscriptionWizard({ user }) {
       setStatus(validation);
       return;
     }
+    setSavingAddress(true);
     try {
       const payload = { ...addressForm };
       const saved = await apiPost(`/users/${user.id}/addresses`, payload);
@@ -79,8 +88,13 @@ export default function SubscriptionWizard({ user }) {
       setForm((prev) => ({ ...prev, addressId: saved.id }));
       resetAddressForm();
       setShowAddressModal(false);
-    } catch {
-      setStatus("Unable to save address.");
+      notify({ type: "success", message: "Address saved." });
+    } catch (error) {
+      const message = error.message || "Unable to save address.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setSavingAddress(false);
     }
   }
 
@@ -167,12 +181,18 @@ export default function SubscriptionWizard({ user }) {
       payload.days = days;
     }
 
+    setSubmittingPlan(true);
     try {
       const plan = await apiPost(`/users/${user.id}/plans`, payload);
       setStatus("");
       setPlacedPlan(plan);
-    } catch {
-      setStatus("Unable to create subscription. Check API.");
+      notify({ type: "success", message: "Subscription created successfully." });
+    } catch (error) {
+      const message = error.message || "Unable to create subscription. Check API.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setSubmittingPlan(false);
     }
   }
 
@@ -184,6 +204,12 @@ export default function SubscriptionWizard({ user }) {
     <section className="section-card">
       <p className="section-kicker">Start Subscription</p>
       <h2>Step {step} of 4</h2>
+      {loadingData ? (
+        <p className="inline-loader">
+          <span className="button-spinner" aria-hidden="true" />
+          Loading products and addresses...
+        </p>
+      ) : null}
 
       {step === 1 && (
         <div className="wizard-step">
@@ -334,6 +360,7 @@ export default function SubscriptionWizard({ user }) {
                       setShowAddressModal(false);
                       resetAddressForm();
                     }}
+                    disabled={savingAddress}
                   >
                     Close
                   </button>
@@ -349,11 +376,13 @@ export default function SubscriptionWizard({ user }) {
                         setShowAddressModal(false);
                         resetAddressForm();
                       }}
+                      disabled={savingAddress}
                     >
                       Cancel
                     </button>
-                    <button className="primary" type="submit">
-                      Save Address
+                    <button className="primary" type="submit" disabled={savingAddress}>
+                      {savingAddress ? <span className="button-spinner" aria-hidden="true" /> : null}
+                      {savingAddress ? "Saving address..." : "Save Address"}
                     </button>
                   </div>
                 </form>
@@ -380,8 +409,14 @@ export default function SubscriptionWizard({ user }) {
             </p>
             <p>Estimated total: INR {estimate.toFixed(0)}</p>
           </div>
-          <button className="primary" style={{marginTop: "20px"}} onClick={submitPlan}>
-            Cash On Delivery & Place Order
+          <button
+            className="primary"
+            style={{marginTop: "20px"}}
+            onClick={submitPlan}
+            disabled={submittingPlan}
+          >
+            {submittingPlan ? <span className="button-spinner" aria-hidden="true" /> : null}
+            {submittingPlan ? "Creating subscription..." : "Cash On Delivery & Place Order"}
           </button>
         </div>
       )}

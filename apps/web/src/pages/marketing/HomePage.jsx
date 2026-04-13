@@ -5,6 +5,7 @@ import { useCart } from "../../contexts/CartContext.jsx";
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const { addItem, items, updateQuantity } = useCart();
 
   useEffect(() => {
@@ -12,11 +13,14 @@ export default function HomePage() {
   }, []);
 
   async function loadProducts() {
+    setLoadingProducts(true);
     try {
       const data = await apiGet("/products");
       setProducts(Array.isArray(data) ? data.slice(0, 4) : []);
     } catch {
       setProducts([]);
+    } finally {
+      setLoadingProducts(false);
     }
   }
 
@@ -62,6 +66,12 @@ export default function HomePage() {
       <section className="section-card">
         <p className="section-kicker">Highlights</p>
         <h2>Popular products</h2>
+        {loadingProducts ? (
+          <p className="inline-loader">
+            <span className="button-spinner" aria-hidden="true" />
+            Loading products...
+          </p>
+        ) : null}
 
         <div className="products">
           {products.map((product) => {
@@ -112,7 +122,9 @@ export default function HomePage() {
         </div>
 
         {!products.length && (
-          <p className="empty-state">Add products in Admin to showcase here.</p>
+          <p className="empty-state">
+            {loadingProducts ? "Loading products..." : "Add products in Admin to showcase here."}
+          </p>
         )}
       </section>
     </>

@@ -25,9 +25,11 @@ function formatAddress(address) {
 export default function OrdersPage({ user }) {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   useEffect(() => {
     async function loadOrders() {
+      setLoadingOrders(true);
       try {
         const data = await apiGet(`/orders/users/${encodeURIComponent(user.id)}`);
         const nextOrders = Array.isArray(data) ? data : [];
@@ -38,6 +40,8 @@ export default function OrdersPage({ user }) {
       } catch {
         setOrders([]);
         setSelectedOrder(null);
+      } finally {
+        setLoadingOrders(false);
       }
     }
 
@@ -48,6 +52,12 @@ export default function OrdersPage({ user }) {
     <section className="section-card">
       <p className="section-kicker">Orders</p>
       <h2>Your Orders</h2>
+      {loadingOrders ? (
+        <p className="inline-loader">
+          <span className="button-spinner" aria-hidden="true" />
+          Loading orders...
+        </p>
+      ) : null}
       {orders.length ? (
         <div className="saved-orders">
           {orders.map((order) => (
@@ -78,7 +88,7 @@ export default function OrdersPage({ user }) {
           ))}
         </div>
       ) : (
-        <p className="empty-state">No orders yet.</p>
+        <p className="empty-state">{loadingOrders ? "Loading orders..." : "No orders yet."}</p>
       )}
       {selectedOrder ? (
         <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>

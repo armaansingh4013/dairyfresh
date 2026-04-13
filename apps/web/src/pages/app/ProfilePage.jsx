@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../services/api.js";
+import { useNotifications } from "../../contexts/NotificationContext.jsx";
 import AddressFormFields, {
   createEmptyAddress,
   formatAddressSummary,
@@ -20,6 +21,13 @@ export default function ProfilePage({ user }) {
     email: user.email || ""
   });
   const [status, setStatus] = useState("");
+  const [loadingDeliveries, setLoadingDeliveries] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingAddressId, setSavingAddressId] = useState(null);
+  const [deletingAddressId, setDeletingAddressId] = useState(null);
+  const [addingAddress, setAddingAddress] = useState(false);
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadDeliveries();
@@ -27,6 +35,7 @@ export default function ProfilePage({ user }) {
   }, [user.id]);
 
   async function loadDeliveries() {
+    setLoadingDeliveries(true);
     try {
       const data = await apiGet(`/users/${user.id}/deliveries`);
       setDeliveries(Array.isArray(data) ? data : []);
@@ -34,10 +43,13 @@ export default function ProfilePage({ user }) {
     } catch {
       setDeliveries([]);
       setVisibleDeliveries(DELIVERY_BATCH_SIZE);
+    } finally {
+      setLoadingDeliveries(false);
     }
   }
 
   async function loadAddresses() {
+    setLoadingAddresses(true);
     try {
       const data = await apiGet(`/users/${user.id}/addresses`);
       const list = Array.isArray(data) ? data : [];
@@ -64,20 +76,28 @@ export default function ProfilePage({ user }) {
       );
     } catch {
       setAddresses([]);
+    } finally {
+      setLoadingAddresses(false);
     }
   }
 
   async function saveProfile(event) {
     event.preventDefault();
     setStatus("");
+    setSavingProfile(true);
     try {
       await apiPatch(`/users/${user.id}`, {
         name: profileForm.name,
         email: profileForm.email
       });
       setStatus("Profile updated.");
-    } catch {
-      setStatus("Unable to update profile.");
+      notify({ type: "success", message: "Profile updated." });
+    } catch (error) {
+      const message = error.message || "Unable to update profile.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -89,13 +109,19 @@ export default function ProfilePage({ user }) {
       setStatus(validation);
       return;
     }
+    setSavingAddressId(addressId);
     try {
       await apiPatch(`/users/addresses/${addressId}`, edit);
       setStatus("Address updated.");
       setEditingAddressId(null);
-      loadAddresses();
-    } catch {
-      setStatus("Unable to update address.");
+      notify({ type: "success", message: "Address updated." });
+      await loadAddresses();
+    } catch (error) {
+      const message = error.message || "Unable to update address.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setSavingAddressId(null);
     }
   }
 
@@ -103,15 +129,21 @@ export default function ProfilePage({ user }) {
     const confirmed = window.confirm("Delete this address?");
     if (!confirmed) return;
 
+    setDeletingAddressId(addressId);
     try {
       await apiDelete(`/users/addresses/${addressId}`);
       setStatus("Address deleted.");
       if (editingAddressId === addressId) {
         setEditingAddressId(null);
       }
-      loadAddresses();
-    } catch {
-      setStatus("Unable to delete address.");
+      notify({ type: "success", message: "Address deleted." });
+      await loadAddresses();
+    } catch (error) {
+      const message = error.message || "Unable to delete address.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setDeletingAddressId(null);
     }
   }
 
@@ -123,12 +155,18 @@ export default function ProfilePage({ user }) {
       setStatus(validation);
       return;
     }
+    setAddingAddress(true);
     try {
       await apiPost(`/users/${user.id}/addresses`, newAddress);
       setNewAddress(createEmptyAddress());
-      loadAddresses();
-    } catch {
-      setStatus("Unable to add address.");
+      notify({ type: "success", message: "Address added." });
+      await loadAddresses();
+    } catch (error) {
+      const message = error.message || "Unable to add address.";
+      setStatus(message);
+      notify({ type: "error", message });
+    } finally {
+      setAddingAddress(false);
     }
   }
 
@@ -185,8 +223,9 @@ export default function ProfilePage({ user }) {
             />
           </label>
         </div>
-        <button className="primary" type="submit">
-          Save Profile
+        <button className="primary" type="submit" disabled={savingProfile}>
+          {savingProfile ? <span className="button-spinner" aria-hidden="true" /> : null}
+          {savingProfile ? "Saving profile..." : "Save Profile"}
         </button>
         {status && <p className="message">{status}</p>}
       </form>
@@ -195,10 +234,17 @@ export default function ProfilePage({ user }) {
       <form className="section-card address-form" onSubmit={addAddress}>
         <h4>Add new address</h4>
         <AddressFormFields value={newAddress} onChange={setNewAddress} />
-        <button className="ghost" type="submit">
-          Add Address
+        <button className="ghost" type="submit" disabled={addingAddress}>
+          {addingAddress ? <span className="button-spinner" aria-hidden="true" /> : null}
+          {addingAddress ? "Saving address..." : "Add Address"}
         </button>
       </form>
+      {loadingAddresses ? (
+        <p className="inline-loader">
+          <span className="button-spinner" aria-hidden="true" />
+          Loading saved addresses...
+        </p>
+      ) : null}
       <div className="grid">
         {addresses.map((addr) => (
           <div key={addr.id} className="address-card profile-address">
@@ -228,8 +274,10 @@ export default function ProfilePage({ user }) {
                 className="ghost danger"
                 type="button"
                 onClick={() => deleteAddress(addr.id)}
+                disabled={deletingAddressId === addr.id}
               >
-                Delete
+                {deletingAddressId === addr.id ? <span className="button-spinner" aria-hidden="true" /> : null}
+                {deletingAddressId === addr.id ? "Deleting..." : "Delete"}
               </button>
             </div>
 
@@ -248,8 +296,14 @@ export default function ProfilePage({ user }) {
                   }
                 />
 
-                <button className="primary" type="button" onClick={() => saveAddress(addr.id)}>
-                  Save Address
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() => saveAddress(addr.id)}
+                  disabled={savingAddressId === addr.id}
+                >
+                  {savingAddressId === addr.id ? <span className="button-spinner" aria-hidden="true" /> : null}
+                  {savingAddressId === addr.id ? "Saving address..." : "Save Address"}
                 </button>
               </div>
             )}
@@ -268,6 +322,12 @@ export default function ProfilePage({ user }) {
 
         {showDeliveries && (
           <>
+            {loadingDeliveries ? (
+              <p className="inline-loader">
+                <span className="button-spinner" aria-hidden="true" />
+                Loading delivered orders...
+              </p>
+            ) : null}
             {!!deliveredOnly.length && (
               <table className="table">
                 <thead>

@@ -58,6 +58,7 @@ export default function MobileApp() {
   const [otp, setOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [appLoading, setAppLoading] = useState(false);
   const [products, setProducts] = useState([]);
@@ -66,6 +67,12 @@ export default function MobileApp() {
   const [addresses, setAddresses] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [successState, setSuccessState] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
+  const [savingPlanDays, setSavingPlanDays] = useState(false);
+  const [cancellingPlan, setCancellingPlan] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   const userId = session?.user?.id || null;
 
@@ -76,6 +83,16 @@ export default function MobileApp() {
   useEffect(() => {
     saveCart(cartItems);
   }, [cartItems]);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+
+    const timeoutId = setTimeout(() => {
+      setToast(null);
+    }, 2600);
+
+    return () => clearTimeout(timeoutId);
+  }, [toast]);
 
   async function bootstrap() {
     const [storedSession, storedCart] = await Promise.all([loadSession(), loadCart()]);
@@ -127,6 +144,7 @@ export default function MobileApp() {
       setStatus("");
     } catch (error) {
       setStatus(error.message || "Unable to load app data.");
+      showToast(error.message || "Unable to load app data.", "error");
     } finally {
       setAppLoading(false);
     }
@@ -140,12 +158,17 @@ export default function MobileApp() {
       return;
     }
 
+    setOtpLoading(true);
     try {
       const payload = await apiPost("/auth/request-otp", { email: phone.trim() });
       setOtpRequested(true);
       setStatus(payload.message || "OTP sent.");
+      showToast(payload.message || "OTP sent successfully.", "success");
     } catch (error) {
       setStatus(error.message);
+      showToast(error.message || "Unable to send OTP.", "error");
+    } finally {
+      setOtpLoading(false);
     }
   }
 
@@ -170,8 +193,10 @@ export default function MobileApp() {
       setActiveTab("shop");
       setActiveView({ name: "root", params: {} });
       await refreshAppData(payload, { force: true });
+      showToast("Logged in successfully.", "success");
     } catch (error) {
       setStatus(error.message);
+      showToast(error.message || "Unable to sign in.", "error");
     } finally {
       setAuthLoading(false);
     }
@@ -208,11 +233,17 @@ export default function MobileApp() {
     }
   }
 
+  function showToast(message, type = "info") {
+    if (!message) return;
+    setToast({ message, type });
+  }
+
   async function handlePlaceOrder({ addressId, date, note }) {
     if (!userId || !cartItems.length) {
       return;
     }
 
+    setPlacingOrder(true);
     try {
       const order = await apiPost(
         "/orders",
@@ -241,18 +272,24 @@ export default function MobileApp() {
           setActiveTab("orders");
         }
       });
+      showToast("Order placed successfully.", "success");
     } catch (error) {
+      showToast(error.message || "Unable to place order.", "error");
       Alert.alert("Unable to place order", error.message);
+    } finally {
+      setPlacingOrder(false);
     }
   }
 
   async function handleCreateSubscription(payload, productName) {
     if (!userId) return;
 
+    setCreatingSubscription(true);
     try {
       const plan = await apiPost(`/users/${userId}/plans`, payload, session.token);
       await invalidateCache([`plans:${userId}`, `orders:${userId}`]);
       await refreshAppData(session, { force: true });
+      showToast("Subscription created successfully.", "success");
       showSuccess({
         title: "Subscription placed",
         body: `${productName || "Your subscription"} is active now.`,
@@ -262,28 +299,41 @@ export default function MobileApp() {
         }
       });
     } catch (error) {
+      showToast(error.message || "Unable to create subscription.", "error");
       Alert.alert("Unable to create subscription", error.message);
+    } finally {
+      setCreatingSubscription(false);
     }
   }
 
   async function handleSavePlanDays(planId, days) {
+    setSavingPlanDays(true);
     try {
       await apiPost(`/plans/${planId}/days`, { days }, session.token);
       await invalidateCache([`plans:${userId}`]);
       await refreshAppData(session, { force: true });
+      showToast("Subscription updated.", "success");
     } catch (error) {
+      showToast(error.message || "Unable to update subscription.", "error");
       Alert.alert("Unable to update subscription", error.message);
+    } finally {
+      setSavingPlanDays(false);
     }
   }
 
   async function handleCancelPlan(planId) {
+    setCancellingPlan(true);
     try {
       await apiPatch(`/plans/${planId}`, { status: "CANCELLED" }, session.token);
       await invalidateCache([`plans:${userId}`, `orders:${userId}`]);
       await refreshAppData(session, { force: true });
+      showToast("Subscription cancelled.", "success");
       closeView();
     } catch (error) {
+      showToast(error.message || "Unable to cancel subscription.", "error");
       Alert.alert("Unable to cancel subscription", error.message);
+    } finally {
+      setCancellingPlan(false);
     }
   }
 
@@ -296,17 +346,22 @@ export default function MobileApp() {
       return null;
     }
 
+    setSavingAddress(true);
     try {
       const saved = await apiPost(`/users/${userId}/addresses`, payload, session.token);
       await invalidateCache([`addresses:${userId}`]);
       await refreshAppData(session, { force: true });
+      showToast("Address saved.", "success");
       if (options.selectAfterSave) {
         return saved;
       }
       return saved;
     } catch (error) {
+      showToast(error.message || "Unable to save address.", "error");
       Alert.alert("Unable to save address", error.message);
       return null;
+    } finally {
+      setSavingAddress(false);
     }
   }
 
@@ -383,6 +438,7 @@ export default function MobileApp() {
             status={status}
             otpRequested={otpRequested}
             loading={authLoading}
+            otpLoading={otpLoading}
             onChangePhone={setPhone}
             onChangeOtp={setOtp}
             onRequestOtp={handleRequestOtp}
@@ -404,6 +460,12 @@ export default function MobileApp() {
           onBack={closeView}
           onOpenCart={() => openView("cart")}
         />
+        {appLoading ? (
+          <View style={styles.loadingBanner}>
+            <ActivityIndicator size="small" color={colors.accentStrong} />
+            <Text style={styles.loadingBannerText}>Refreshing data...</Text>
+          </View>
+        ) : null}
         {status ? <Text style={styles.status}>{status}</Text> : null}
         <View style={styles.content}>
           {renderContent({
@@ -433,9 +495,14 @@ export default function MobileApp() {
             orders,
             ordersByPlanId,
             plans,
+            placingOrder,
             products,
+            savingAddress,
+            savingPlanDays,
             session,
-            subscriptions
+            subscriptions,
+            creatingSubscription,
+            cancellingPlan
           })}
         </View>
         {activeView.name === "root" ? (
@@ -443,6 +510,7 @@ export default function MobileApp() {
         ) : null}
       </View>
       <SuccessOverlay successState={successState} />
+      <ToastOverlay toast={toast} />
     </SafeAreaView>
   );
 }
@@ -458,6 +526,8 @@ function renderContent(props) {
         cartTotal={props.cartTotal}
         onAddAddress={props.onAddAddress}
         onPlaceOrder={props.onPlaceOrder}
+        placingOrder={props.placingOrder}
+        savingAddress={props.savingAddress}
       />
     );
   }
@@ -469,6 +539,8 @@ function renderContent(props) {
         onAddAddress={props.onAddAddress}
         onCreateSubscription={props.onCreateSubscription}
         products={props.products}
+        creatingSubscription={props.creatingSubscription}
+        savingAddress={props.savingAddress}
       />
     );
   }
@@ -476,10 +548,12 @@ function renderContent(props) {
   if (activeView.name === "subscriptionDetail") {
     return (
       <SubscriptionDetailScreen
+        cancellingPlan={props.cancellingPlan}
         onCancelPlan={props.onCancelPlan}
         onSavePlanDays={props.onSavePlanDays}
         orders={props.ordersByPlanId[props.activeView.params.plan?.id] || []}
         plan={props.activeView.params.plan}
+        savingPlanDays={props.savingPlanDays}
       />
     );
   }
@@ -506,6 +580,7 @@ function renderContent(props) {
           addresses={props.addresses}
           onAddAddress={props.onAddAddress}
           onLogout={props.onLogout}
+          savingAddress={props.savingAddress}
           session={props.session}
         />
       );
@@ -649,7 +724,7 @@ function ProductCard({ product, quantity, onUpdateCart }) {
   );
 }
 
-function CartScreen({ addresses, cartItems, cartTotal, onAddAddress, onPlaceOrder }) {
+function CartScreen({ addresses, cartItems, cartTotal, onAddAddress, onPlaceOrder, placingOrder, savingAddress }) {
   const [addressId, setAddressId] = useState(addresses[0]?.id || "");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
@@ -704,7 +779,7 @@ function CartScreen({ addresses, cartItems, cartTotal, onAddAddress, onPlaceOrde
               </Pressable>
             ))}
           </View>
-          <ActionButton tone="ghost" onPress={() => setShowAddressModal(true)}>
+          <ActionButton tone="ghost" onPress={() => setShowAddressModal(true)} disabled={savingAddress}>
             Add New Address
           </ActionButton>
           <Text style={styles.cardBody}>Note</Text>
@@ -725,6 +800,8 @@ function CartScreen({ addresses, cartItems, cartTotal, onAddAddress, onPlaceOrde
               }
               onPlaceOrder({ addressId, date, note });
             }}
+            loading={placingOrder}
+            loadingLabel="Placing order..."
           >
             Place Order
           </ActionButton>
@@ -732,6 +809,7 @@ function CartScreen({ addresses, cartItems, cartTotal, onAddAddress, onPlaceOrde
         <AddressFormModal
           visible={showAddressModal}
           onClose={() => setShowAddressModal(false)}
+          saving={savingAddress}
           onSubmit={async (form) => {
             const saved = await onAddAddress(form, { selectAfterSave: true });
             if (saved?.id) {
@@ -819,7 +897,7 @@ function SubscriptionsScreen({ groups, onOpenSubscription, onOpenWizard }) {
   );
 }
 
-function SubscriptionDetailScreen({ onCancelPlan, onSavePlanDays, orders, plan }) {
+function SubscriptionDetailScreen({ cancellingPlan, onCancelPlan, onSavePlanDays, orders, plan, savingPlanDays }) {
   const [tab, setTab] = useState("today");
   const [draftDays, setDraftDays] = useState(() => normalizePlanDays(plan?.days));
 
@@ -931,10 +1009,17 @@ function SubscriptionDetailScreen({ onCancelPlan, onSavePlanDays, orders, plan }
                   }))
                 )
               }
+              loading={savingPlanDays}
+              loadingLabel="Saving changes..."
             >
               Save Changes
             </ActionButton>
-            <ActionButton tone="ghost" onPress={() => onCancelPlan(plan.id)}>
+            <ActionButton
+              tone="ghost"
+              onPress={() => onCancelPlan(plan.id)}
+              loading={cancellingPlan}
+              loadingLabel="Cancelling..."
+            >
               Cancel Subscription
             </ActionButton>
           </View>
@@ -944,7 +1029,14 @@ function SubscriptionDetailScreen({ onCancelPlan, onSavePlanDays, orders, plan }
   );
 }
 
-function SubscriptionWizardScreen({ addresses, onAddAddress, onCreateSubscription, products }) {
+function SubscriptionWizardScreen({
+  addresses,
+  onAddAddress,
+  onCreateSubscription,
+  products,
+  creatingSubscription,
+  savingAddress
+}) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     productId: "",
@@ -1071,7 +1163,7 @@ function SubscriptionWizardScreen({ addresses, onAddAddress, onCreateSubscriptio
                 </Pressable>
               ))}
             </View>
-            <ActionButton tone="ghost" onPress={() => setShowAddressModal(true)}>
+            <ActionButton tone="ghost" onPress={() => setShowAddressModal(true)} disabled={savingAddress}>
               Add Address
             </ActionButton>
           </Card>
@@ -1120,6 +1212,8 @@ function SubscriptionWizardScreen({ addresses, onAddAddress, onCreateSubscriptio
 
                 onCreateSubscription(payload, selectedProduct?.name);
               }}
+              loading={creatingSubscription}
+              loadingLabel="Creating subscription..."
             >
               Cash On Delivery & Place Order
             </ActionButton>
@@ -1139,6 +1233,7 @@ function SubscriptionWizardScreen({ addresses, onAddAddress, onCreateSubscriptio
         <AddressFormModal
           visible={showAddressModal}
           onClose={() => setShowAddressModal(false)}
+          saving={savingAddress}
           onSubmit={async (formValue) => {
             const saved = await onAddAddress(formValue, { selectAfterSave: true });
             if (saved?.id) {
@@ -1235,7 +1330,7 @@ function OrdersScreen({ onOpenSubscription, orders }) {
   );
 }
 
-function ProfileScreen({ addresses, onAddAddress, onLogout, session }) {
+function ProfileScreen({ addresses, onAddAddress, onLogout, savingAddress, session }) {
   const [showAddressModal, setShowAddressModal] = useState(false);
 
   return (
@@ -1266,7 +1361,9 @@ function ProfileScreen({ addresses, onAddAddress, onLogout, session }) {
         <Card>
           <Text style={styles.sectionTitle}>Add address</Text>
           <Text style={styles.cardBody}>Open the address form and save another delivery location.</Text>
-          <ActionButton onPress={() => setShowAddressModal(true)}>Add Address</ActionButton>
+          <ActionButton onPress={() => setShowAddressModal(true)} disabled={savingAddress}>
+            Add Address
+          </ActionButton>
         </Card>
 
         <ActionButton tone="ghost" onPress={onLogout}>
@@ -1275,6 +1372,7 @@ function ProfileScreen({ addresses, onAddAddress, onLogout, session }) {
         <AddressFormModal
           visible={showAddressModal}
           onClose={() => setShowAddressModal(false)}
+          saving={savingAddress}
           onSubmit={async (formValue) => {
             const saved = await onAddAddress(formValue, { selectAfterSave: false });
             if (saved?.id) {
@@ -1287,7 +1385,7 @@ function ProfileScreen({ addresses, onAddAddress, onLogout, session }) {
   );
 }
 
-function AddressFormModal({ visible, onClose, onSubmit }) {
+function AddressFormModal({ visible, onClose, onSubmit, saving = false }) {
   const [form, setForm] = useState(emptyAddressForm);
 
   useEffect(() => {
@@ -1308,8 +1406,9 @@ function AddressFormModal({ visible, onClose, onSubmit }) {
             form={form}
             onChange={setForm}
             onSubmit={() => onSubmit(form)}
+            saving={saving}
           />
-          <ActionButton tone="ghost" onPress={onClose}>
+          <ActionButton tone="ghost" onPress={onClose} disabled={saving}>
             Close
           </ActionButton>
         </View>
@@ -1318,7 +1417,7 @@ function AddressFormModal({ visible, onClose, onSubmit }) {
   );
 }
 
-function AddressForm({ form, onChange, onSubmit }) {
+function AddressForm({ form, onChange, onSubmit, saving = false }) {
   return (
     <View style={styles.stack}>
       <Field label="Title" value={form.title} onChangeText={(value) => onChange((current) => ({ ...current, title: value }))} />
@@ -1328,7 +1427,9 @@ function AddressForm({ form, onChange, onSubmit }) {
       <Field label="City" value={form.city} onChangeText={(value) => onChange((current) => ({ ...current, city: value }))} />
       <Field label="State" value={form.state} onChangeText={(value) => onChange((current) => ({ ...current, state: value }))} />
       <Field label="Postal code" value={form.postalCode} onChangeText={(value) => onChange((current) => ({ ...current, postalCode: value }))} />
-      <ActionButton onPress={onSubmit}>Save Address</ActionButton>
+      <ActionButton onPress={onSubmit} loading={saving} loadingLabel="Saving address...">
+        Save Address
+      </ActionButton>
     </View>
   );
 }
@@ -1532,6 +1633,50 @@ function SuccessOverlay({ successState }) {
         </Animated.View>
       </View>
     </Modal>
+  );
+}
+
+function ToastOverlay({ toast }) {
+  const translateY = useRef(new Animated.Value(40)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!toast) return;
+
+    translateY.setValue(40);
+    opacity.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true
+      })
+    ]).start();
+  }, [opacity, toast, translateY]);
+
+  if (!toast) {
+    return null;
+  }
+
+  const toneStyle =
+    toast.type === "error"
+      ? styles.toastError
+      : toast.type === "success"
+        ? styles.toastSuccess
+        : styles.toastInfo;
+
+  return (
+    <View pointerEvents="none" style={styles.toastLayer}>
+      <Animated.View style={[styles.toastCard, toneStyle, { opacity, transform: [{ translateY }] }]}>
+        <Text style={styles.toastText}>{toast.message}</Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -1767,6 +1912,20 @@ const styles = StyleSheet.create({
   status: {
     color: colors.muted,
     marginBottom: spacing.sm
+  },
+  loadingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceMuted
+  },
+  loadingBannerText: {
+    color: colors.ink,
+    fontWeight: "700"
   },
   content: {
     flex: 1
@@ -2081,5 +2240,30 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "900",
     color: colors.success
+  },
+  toastLayer: {
+    position: "absolute",
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.xl
+  },
+  toastCard: {
+    borderRadius: radii.md,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    ...shadows.card
+  },
+  toastInfo: {
+    backgroundColor: colors.surface
+  },
+  toastSuccess: {
+    backgroundColor: colors.successSoft
+  },
+  toastError: {
+    backgroundColor: colors.accentSoft
+  },
+  toastText: {
+    color: colors.ink,
+    fontWeight: "700"
   }
 });
