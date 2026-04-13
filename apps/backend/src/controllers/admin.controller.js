@@ -1,11 +1,13 @@
 import { listAdminSubscriptions, getAdminReportsSummary } from "../services/admin.service.js";
 import { generateInvoices, listAdminInvoices } from "../services/billing.service.js";
 import { generateDeliveries, listDailyDeliveries } from "../services/deliveries.service.js";
+import { listTodaysOrders } from "../services/orders.service.js";
 import { badRequest } from "../utils/response.js";
 
 export async function getDailyDeliveries(req, res) {
   const date = req.query.date ? new Date(String(req.query.date)) : new Date();
-  res.json(await listDailyDeliveries(date));
+  // res.json(await listDailyDeliveries(date));
+  res.json(await listTodaysOrders(date));
 }
 
 export async function getSubscriptionsSummary(req, res) {

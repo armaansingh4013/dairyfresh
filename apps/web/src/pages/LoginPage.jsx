@@ -107,7 +107,7 @@ export default function LoginPage({ onLogin, mode = "login" }) {
             placeholder="name@example.com"
           />
         </label>
-        {status && <p className="message" style={{color:"Red"}}>{status}</p>}
+        {status && <p className="message">{status}</p>}
         <button className="ghost" type="button" onClick={handleRequestOtp}>
           {otpSent ? "Resend OTP" : "Send OTP"}
         </button>

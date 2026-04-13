@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { clearCacheEntries, readCache, writeCache } from "./cache";
 
 const DEFAULT_API_BASE =
-  Platform.OS === "android" ? "https://dairyfresh-1.onrender.com" : "http://localhost:4000";
+  Platform.OS === "android" ? "http://10.0.2.2:4000" : "http://localhost:4000";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_BASE;
 

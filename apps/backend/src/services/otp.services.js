@@ -1,42 +1,12 @@
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
 const resend_key = process.env.RESEND_API_KEY;
 
 const OTP_EXPIRES_MINUTES = Number(process.env.OTP_EXPIRES_MINUTES || 5);
 
-function getMailerConfig() {
-    const user = process.env.GMAIL_USER?.trim();
-    const pass = process.env.GMAIL_APP_PASSWORD?.trim();
-  
-    console.log("GMAIL_USER loaded:", user);
-    console.log("GMAIL_APP_PASSWORD exists:", Boolean(pass));
-  
-    if (!user) {
-      throw new Error("Missing GMAIL_USER in environment");
-    }
-  
-    if (!pass) {
-      throw new Error("Missing GMAIL_APP_PASSWORD in environment");
-    }
-  
-    return { user, pass };
-  }
-  
-  function getTransporter() {
-    const { user, pass } = getMailerConfig();
-  
-    return nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user,
-        pass
-      }
-    });
-  }
+
+
 
 export function generateOtp(length = 6) {
   const min = 10 ** (length - 1);

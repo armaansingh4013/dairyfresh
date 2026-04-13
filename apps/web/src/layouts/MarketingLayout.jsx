@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCart } from "../contexts/CartContext.jsx";
 import AccountMenu from "../components/AccountMenu.jsx";
-
+import icon from "../../public/icon.png";
 export default function MarketingLayout({ user, onLogout, children }) {
   const { itemCount } = useCart();
   const location = useLocation();
@@ -17,7 +17,8 @@ export default function MarketingLayout({ user, onLogout, children }) {
       <div className="page">
         <header className="top-nav">
           <div className="brand">
-            <span className="brand-dot" />
+            {/* <span className="brand-dot" /> */}
+            <img src={icon} style={{height:"3rem" }}></img>
             <div>
               <strong>Mazara Dairy</strong>
               <p>Fresh dairy subscriptions</p>

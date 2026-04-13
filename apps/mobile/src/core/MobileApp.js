@@ -141,7 +141,7 @@ export default function MobileApp() {
     }
 
     try {
-      const payload = await apiPost("/auth/request-otp", { phone: phone.trim() });
+      const payload = await apiPost("/auth/request-otp", { email: phone.trim() });
       setOtpRequested(true);
       setStatus(payload.message || "OTP sent.");
     } catch (error) {
@@ -159,7 +159,7 @@ export default function MobileApp() {
     setAuthLoading(true);
     try {
       const payload = await apiPost("/auth/verify-otp", {
-        phone: phone.trim(),
+        email: phone.trim(),
         otp: otp.trim()
       });
       setSession(payload);

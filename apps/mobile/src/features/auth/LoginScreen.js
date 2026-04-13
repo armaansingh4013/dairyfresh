@@ -28,7 +28,7 @@ export default function LoginScreen({
 
       <Card>
         <View style={styles.form}>
-          <Field label="Phone" value={phone} onChangeText={onChangePhone} />
+          <Field label="Email" value={phone} onChangeText={onChangePhone} />
           <Pressable style={[styles.button, styles.ghostButton]} onPress={onRequestOtp}>
             <Text style={styles.ghostButtonLabel}>
               {otpRequested ? "Resend OTP" : "Send OTP"}

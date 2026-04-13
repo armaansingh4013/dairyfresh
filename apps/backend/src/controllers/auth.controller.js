@@ -80,6 +80,9 @@ export async function requestOtp(req, res) {
 
   await ensureCoreDemoData();
 
+console.log('====================================');
+console.log('Requesting OTP for:', parsed.data);
+console.log('====================================');
   if (parsed.data.email) {
     const result = await requestEmailOtp({
       email: parsed.data.email,

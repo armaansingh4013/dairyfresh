@@ -73,6 +73,7 @@ export async function upsertUserByEmail({ email, name, phone }) {
     await user.save();
     return user;
   }
+console.log("Creating new user with email:", email, "name:", name, "phone:", phone);
 
   return User.create({
     email,
@@ -82,7 +83,11 @@ export async function upsertUserByEmail({ email, name, phone }) {
 }
 
 export async function requestEmailOtp({ email, name }) {
+  console.log("Requesting email OTP for:", { email, name }
+  );
+  
   const user = await upsertUserByEmail({ email, name });
+console.log("Upserted user for email OTP:", user);
 
   const otp = generateOtp(6);
   user.otpHash = hashOtp(otp);

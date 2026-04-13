@@ -65,7 +65,7 @@ export default function ProductsPage() {
   }
 
   function startEdit(product) {
-    setEditingProductId(product.id);
+    setEditingProductId(product._id);
     setEditForm({
       name: product.name || "",
       description: product.description || "",
@@ -188,7 +188,7 @@ export default function ProductsPage() {
           </thead>
           <tbody>
             {products.map((product) => (
-              <React.Fragment key={product.id}>
+              <React.Fragment key={product._id}>
                 <tr>
                   <td>{product.name}</td>
                   <td>{product.description || "-"}</td>
@@ -197,11 +197,11 @@ export default function ProductsPage() {
                   <td>{product.isActive ? "Active" : "Inactive"}</td>
                   <td>
                     <button type="button" onClick={() => startEdit(product)}>
-                      {editingProductId === product.id ? "Editing" : "Edit"}
+                      {editingProductId === product._id ? "Editing" : "Edit"}
                     </button>
                   </td>
                 </tr>
-                {editingProductId === product.id && (
+                {editingProductId === product._id && (
                   <tr className="edit-row">
                     <td colSpan="6">
                       <div className="inline-editor">
@@ -286,7 +286,7 @@ export default function ProductsPage() {
                           />
                         </label>
                         <div className="inline-actions">
-                          <button type="button" onClick={() => saveEdit(product.id)}>
+                          <button type="button" onClick={() => saveEdit(product._id)}>
                             Save
                           </button>
                           <button type="button" onClick={() => setEditingProductId(null)}>

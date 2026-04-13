@@ -125,3 +125,19 @@ export async function listPlanOrders(planId) {
   const orders = await Order.find({ planId }).sort({ createdAt: -1 });
   return Promise.all(orders.map((order) => hydrateOrder(order)));
 }
+
+
+export async function listTodaysOrders(date = new Date()) {
+   const startOfDay = new Date(date);
+   startOfDay.setHours(0, 0, 0, 0);
+
+   const endOfDay = new Date(date);
+   endOfDay.setHours(23, 59, 59, 999);
+
+   const orders = await Order.find({
+     date: { $gte: startOfDay, $lte: endOfDay }
+   }).sort({ createdAt: -1 });
+
+   return Promise.all(orders.map((order) => hydrateOrder(order)));
+}
+
