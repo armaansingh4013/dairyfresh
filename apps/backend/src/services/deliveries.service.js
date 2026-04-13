@@ -5,6 +5,11 @@ function getDefaultAddress(user) {
   return user?.addresses?.find((address) => address.isDefault) || user?.addresses?.[0] || null;
 }
 
+async function getDefaultDeliveryPersonId() {
+  const deliveryUser = await User.findOne({ role: "DELIVERY" }).select("_id").lean();
+  return deliveryUser?._id || null;
+}
+
 export async function hydrateDelivery(deliveryDoc, options = {}) {
   const { includePlan = true } = options;
   if (!deliveryDoc) return null;
@@ -61,6 +66,10 @@ export async function hydrateDelivery(deliveryDoc, options = {}) {
 export async function upsertDeliveryRecord(payload) {
   const day = toDateOnly(payload.date);
   const nextDay = addDays(day, 1);
+  const resolvedDeliveryPersonId =
+    payload.deliveryPersonId === undefined
+      ? await getDefaultDeliveryPersonId()
+      : payload.deliveryPersonId;
 
   let delivery = await Delivery.findOne({
     userId: payload.userId,
@@ -72,6 +81,10 @@ export async function upsertDeliveryRecord(payload) {
     Object.assign(delivery, {
       addressId: payload.addressId,
       planId: payload.planId || null,
+      deliveryPersonId:
+        payload.deliveryPersonId !== undefined
+          ? resolvedDeliveryPersonId
+          : delivery.deliveryPersonId || resolvedDeliveryPersonId || null,
       date: day,
       quantity: payload.quantity,
       status: payload.status || delivery.status,
@@ -83,6 +96,7 @@ export async function upsertDeliveryRecord(payload) {
 
   return Delivery.create({
     userId: payload.userId,
+    deliveryPersonId: resolvedDeliveryPersonId,
     addressId: payload.addressId,
     productId: payload.productId,
     planId: payload.planId || null,
@@ -91,6 +105,73 @@ export async function upsertDeliveryRecord(payload) {
     status: payload.status || "PENDING",
     note: payload.note ?? ""
   });
+}
+
+function formatAssignedAddress(address) {
+  if (!address) return null;
+
+  return {
+    id: address._id.toString(),
+    line1: address.line1 || "",
+    city: address.city || "",
+    postalCode: address.postalCode || "",
+    landmark: address.landmark || ""
+  };
+}
+
+export async function listDeliveriesForDeliveryPerson(deliveryPersonId, status = "PENDING") {
+  const start = startOfDay(new Date());
+  const end = endOfDay(new Date());
+
+  const deliveries = await Delivery.find({
+    deliveryPersonId,
+    date: { $gte: start, $lte: end },
+    status: status === "DELIVERED" ? "DELIVERED" : { $in: ["PENDING", "MISSED"] }
+  })
+    .sort({ date: 1, createdAt: 1 })
+    .populate("userId", "name phone addresses")
+    .populate("productId", "name unit price")
+    .lean();
+
+  return deliveries.map((delivery) => {
+    const address =
+      delivery.userId?.addresses?.find(
+        (entry) => String(entry._id) === String(delivery.addressId || "")
+      ) || null;
+    const quantity = Number(delivery.quantity || 0);
+    const unitPrice = Number(delivery.productId?.price || 0);
+
+    return {
+      id: delivery._id.toString(),
+      date: delivery.date,
+      status: delivery.status,
+      quantity,
+      amountToCollect: Number((quantity * unitPrice).toFixed(2)),
+      customer: {
+        id: delivery.userId?._id?.toString?.() || null,
+        name: delivery.userId?.name || "Customer",
+        phone: delivery.userId?.phone || ""
+      },
+      product: {
+        id: delivery.productId?._id?.toString?.() || null,
+        name: delivery.productId?.name || "Product",
+        unit: delivery.productId?.unit || "",
+        price: unitPrice
+      },
+      address: formatAssignedAddress(address)
+    };
+  });
+}
+
+export async function markDeliveryDeliveredForPerson(deliveryId, deliveryPersonId) {
+  const delivery = await Delivery.findOne({
+    _id: deliveryId,
+    deliveryPersonId
+  });
+
+  if (!delivery) return null;
+
+  return updateDelivery(deliveryId, { status: "DELIVERED" });
 }
 
 export async function recalculatePlanStats(planId) {

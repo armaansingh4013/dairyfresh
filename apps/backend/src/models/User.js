@@ -65,7 +65,7 @@ const UserSchema = new Schema(
     name: String,
     role: {
       type: String,
-      enum: ["CUSTOMER", "ADMIN", "STAFF"],
+      enum: ["CUSTOMER", "ADMIN", "DELIVERY", "STAFF"],
       default: "CUSTOMER"
     },
     addresses: [AddressSchema],

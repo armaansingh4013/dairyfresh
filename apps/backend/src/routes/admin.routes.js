@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { requireAuth, requireRole } from "../middlewares/auth.js";
 import {
   generateDailyDeliveries,
   generateMonthlyInvoices,
@@ -14,6 +15,9 @@ import {
 } from "../controllers/admin.controller.js";
 
 const router = Router();
+
+router.use(asyncHandler(requireAuth));
+router.use(requireRole("ADMIN"));
 
 router.get("/deliveries/daily", asyncHandler(getDailyDeliveries));
 router.get("/subscriptions/summary", asyncHandler(getSubscriptionsSummary));

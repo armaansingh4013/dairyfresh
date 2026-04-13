@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-const NAV_ITEMS = [
+const ADMIN_NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "subscriptions", label: "Subscriptions" },
   { id: "deliveries", label: "Deliveries" },
@@ -11,13 +11,34 @@ const NAV_ITEMS = [
   { id: "reports", label: "Reports" }
 ];
 
-export default function AdminLayout({ children }) {
+const DELIVERY_NAV_ITEMS = [{ id: "delivery", label: "My Deliveries" }];
+
+export default function AdminLayout({ children, user, onLogout }) {
+  const navItems = user?.role === "DELIVERY" ? DELIVERY_NAV_ITEMS : ADMIN_NAV_ITEMS;
+
   return (
     <div className="admin">
       <aside className="sidebar">
-        <h2>Mazara Dairy Admin</h2>
+        <div className="sidebar-head">
+          <div>
+            <h2>Mazara Dairy</h2>
+            <p className="sidebar-subtitle">
+              {user?.role === "DELIVERY" ? "Delivery Panel" : "Admin Panel"}
+            </p>
+          </div>
+          <button type="button" className="ghost-button" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
+
+        <div className="sidebar-user">
+          <strong>{user?.name || "User"}</strong>
+          <p>{user?.email || user?.phone || "-"}</p>
+          <span className="role-pill">{user?.role || "-"}</span>
+        </div>
+
         <nav>
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.id}
               to={`/${item.id}`}

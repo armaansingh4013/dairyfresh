@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { Product, Plan, Payment, Invoice, User } from "../models/index.js";
+import { Product, Plan, Payment, Invoice, User, Delivery } from "../models/index.js";
 import { addDays, toDateOnly, toDateKey } from "../utils/date.js";
 import { upsertDeliveryRecord, recalculatePlanStats } from "./deliveries.service.js";
 
@@ -59,8 +59,61 @@ async function createInvoiceRecord(payload) {
 
 export async function ensureCoreDemoData() {
   const count = await Product.countDocuments();
-  if (count > 0) return;
-  await Product.insertMany(DEMO_PRODUCTS);
+  if (count === 0) {
+    await Product.insertMany(DEMO_PRODUCTS);
+  }
+
+  await ensureOperationalDemoUsers();
+}
+
+async function ensureOperationalDemoUsers() {
+  const demoUsers = [
+    {
+      email: "admin@dairy.local",
+      name: "Admin User",
+      role: "ADMIN",
+      isEmailVerified: true
+    },
+    {
+      email: "delivery@dairy.local",
+      name: "Delivery User",
+      role: "DELIVERY",
+      isEmailVerified: true
+    }
+  ];
+
+  for (const payload of demoUsers) {
+    const existing = await User.findOne({ email: payload.email });
+    if (existing) {
+      let changed = false;
+      if (existing.role !== payload.role) {
+        existing.role = payload.role;
+        changed = true;
+      }
+      if (!existing.name && payload.name) {
+        existing.name = payload.name;
+        changed = true;
+      }
+      if (!existing.isEmailVerified) {
+        existing.isEmailVerified = true;
+        changed = true;
+      }
+      if (changed) {
+        await existing.save();
+      }
+      continue;
+    }
+
+    await User.create(payload);
+  }
+
+  const deliveryUser = await User.findOne({ role: "DELIVERY" }).select("_id");
+  if (deliveryUser) {
+    await Delivery.updateMany(
+      { deliveryPersonId: null },
+      { $set: { deliveryPersonId: deliveryUser._id } }
+    );
+  }
 }
 
 export async function ensureDemoCustomerData(user) {

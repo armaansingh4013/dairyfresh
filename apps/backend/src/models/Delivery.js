@@ -6,6 +6,7 @@ const ObjectId = Types.ObjectId;
 const DeliverySchema = new Schema(
   {
     userId: { type: ObjectId, ref: "User" },
+    deliveryPersonId: { type: ObjectId, ref: "User", default: null },
     planId: { type: ObjectId, ref: "Plan" },
     productId: { type: ObjectId, ref: "Product" },
     addressId: ObjectId,

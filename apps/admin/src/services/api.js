@@ -1,10 +1,37 @@
 export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const SESSION_KEY = "dairy-admin-session";
+
+export function readStoredSession() {
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeStoredSession(session) {
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearStoredSession() {
+  window.localStorage.removeItem(SESSION_KEY);
+}
+
+function getSessionToken() {
+  return readStoredSession()?.token || null;
+}
 
 async function request(path, options = {}) {
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {})
   };
+  const token = getSessionToken();
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,

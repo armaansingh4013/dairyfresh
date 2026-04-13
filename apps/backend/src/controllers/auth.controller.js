@@ -64,6 +64,7 @@
 
 import { ensureCoreDemoData, ensureDemoCustomerData } from "../services/demo.service.js";
 import {
+  findUserByEmail,
   findUserByPhone,
   getUserById,
   requestEmailOtp,
@@ -84,6 +85,16 @@ console.log('====================================');
 console.log('Requesting OTP for:', parsed.data);
 console.log('====================================');
   if (parsed.data.email) {
+    const existingUser = await findUserByEmail(parsed.data.email);
+    if (parsed.data.email.endsWith("@dairy.local")) {
+      return res.json({
+        success: true,
+        channel: "EMAIL",
+        otpHint: "1111",
+        message: "Use 1111 as the demo OTP."
+      });
+    }
+
     const result = await requestEmailOtp({
       email: parsed.data.email,
       name: parsed.data.name || parsed.data.emailName
@@ -111,6 +122,23 @@ export async function verifyOtp(req, res) {
   await ensureCoreDemoData();
 
   if (parsed.data.email) {
+    const localDemoUser = parsed.data.email.endsWith("@dairy.local")
+      ? await findUserByEmail(parsed.data.email)
+      : null;
+
+    if (localDemoUser) {
+      if (parsed.data.otp !== "1111") {
+        const error = new Error("Invalid OTP. Use 1111 for demo login.");
+        error.status = 401;
+        throw error;
+      }
+
+      return res.json({
+        token: createSessionToken(localDemoUser),
+        user: sanitizeUser(localDemoUser)
+      });
+    }
+
     const verified = await verifyEmailOtp({
       email: parsed.data.email,
       otp: parsed.data.otp,
@@ -123,7 +151,9 @@ export async function verifyOtp(req, res) {
       throw error;
     }
 
-    await ensureDemoCustomerData(verified.user);
+    if (verified.user.role === "CUSTOMER") {
+      await ensureDemoCustomerData(verified.user);
+    }
 
     return res.json({
       token: createSessionToken(verified.user),
@@ -143,7 +173,7 @@ export async function verifyOtp(req, res) {
     name: parsed.data.name
   });
 
-  if (!existingUser) {
+  if (!existingUser && user.role === "CUSTOMER") {
     await ensureDemoCustomerData(user);
   }
 
