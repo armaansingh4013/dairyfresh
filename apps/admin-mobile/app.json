@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Mazara Admin",
+    "slug": "mazara-admin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "../mobile/assets/icon.png",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F4EFE6"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.armaansingh40132018.mazaraadmin"
+    }
+  }
+}

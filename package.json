@@ -6,11 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm -w apps/api run dev\" \"npm -w apps/web run dev\" \"npm -w apps/admin run dev\" \"npm -w apps/mobile run start\"",
+    "dev": "concurrently \"npm -w apps/api run dev\" \"npm -w apps/web run dev\" \"npm -w apps/admin run dev\" \"npm -w apps/mobile run start\" \"npm -w apps/admin-mobile run start\"",
     "dev:api": "npm -w apps/api run dev",
     "dev:web": "npm -w apps/web run dev",
     "dev:admin": "npm -w apps/admin run dev",
     "dev:mobile": "npm -w apps/mobile run start",
+    "dev:admin-mobile": "npm -w apps/admin-mobile run start",
     "bootstrap": "node scripts/bootstrap.js",
     "start:all": "npm install && npm run bootstrap && npm run dev",
     "lint": "echo 'Add linting per app'",

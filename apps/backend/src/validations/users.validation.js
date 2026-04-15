@@ -7,6 +7,8 @@ export const updateUserSchema = z.object({
 
 export const createAddressSchema = z.object({
   title: z.string().min(1),
+  recipientName: z.string().min(1).optional(),
+  recipientPhone: z.string().min(6).optional(),
   houseNumber: z.string().min(1),
   line1: z.string().min(1),
   line2: z.string().optional(),
@@ -21,6 +23,8 @@ export const createAddressSchema = z.object({
 
 export const updateAddressSchema = z.object({
   title: z.string().min(1).optional(),
+  recipientName: z.string().min(1).optional(),
+  recipientPhone: z.string().min(6).optional(),
   houseNumber: z.string().min(1).optional(),
   line1: z.string().min(1).optional(),
   line2: z.string().optional(),

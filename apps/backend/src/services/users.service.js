@@ -16,6 +16,8 @@ function embeddedAddressToResponse(user, address) {
     id: address._id.toString(),
     userId: user._id.toString(),
     title: address.title,
+    recipientName: address.recipientName,
+    recipientPhone: address.recipientPhone,
     houseNumber: address.houseNumber,
     line1: address.line1,
     line2: address.line2,
@@ -73,6 +75,8 @@ export async function createAddress(userId, payload) {
 
   user.addresses.push({
     title: payload.title,
+    recipientName: payload.recipientName || "",
+    recipientPhone: payload.recipientPhone || "",
     houseNumber: payload.houseNumber,
     line1: payload.line1,
     line2: payload.line2 || "",

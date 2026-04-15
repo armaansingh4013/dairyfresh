@@ -48,6 +48,8 @@ export async function hydrateDelivery(deliveryDoc, options = {}) {
           id: address._id.toString(),
           userId: user._id.toString(),
           title: address.title,
+          recipientName: address.recipientName,
+          recipientPhone: address.recipientPhone,
           houseNumber: address.houseNumber,
           line1: address.line1,
           line2: address.line2,

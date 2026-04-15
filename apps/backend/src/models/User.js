@@ -44,6 +44,8 @@ const { Schema } = mongoose;
 const AddressSchema = new Schema(
   {
     title: String,
+    recipientName: String,
+    recipientPhone: String,
     houseNumber: String,
     line1: String,
     line2: String,

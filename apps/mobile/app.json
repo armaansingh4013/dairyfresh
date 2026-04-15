@@ -22,7 +22,24 @@
       }
     },
     "android": {
-      "package": "com.armaansingh40132018.mazaradairy"
+      "package": "com.armaansingh40132018.mazaradairy",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Mazara Dairy to use your location to set the delivery pin."
+        }
+      ]
+    ],
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow Mazara Dairy to use your location to set the delivery pin."
+      }
     }
   }
 }
