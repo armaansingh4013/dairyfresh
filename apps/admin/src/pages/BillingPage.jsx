@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 export default function BillingPage() {
   const now = new Date();
   const [month, setMonth] = useState(String(now.getMonth() + 1));
   const [year, setYear] = useState(String(now.getFullYear()));
   const [invoices, setInvoices] = useState([]);
-  const [status, setStatus] = useState("");
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadInvoices(String(now.getMonth() + 1), String(now.getFullYear()));
@@ -16,25 +17,27 @@ export default function BillingPage() {
     try {
       const data = await apiGet(`/admin/invoices?month=${targetMonth}&year=${targetYear}`);
       setInvoices(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (error) {
       setInvoices([]);
+      notify({ type: "error", message: error.message || "Unable to load invoices." });
     }
   }
 
   async function generateInvoices() {
-    setStatus("");
     try {
       const result = await apiPost(`/admin/invoices/generate?month=${month}&year=${year}`, {});
-      setStatus(`Invoices generated. ${result.created || 0} records updated.`);
+      notify({
+        type: "success",
+        message: `Invoices generated. ${result.created || 0} records updated.`
+      });
       loadInvoices();
-    } catch {
-      setStatus("Unable to generate invoices.");
+    } catch (error) {
+      notify({ type: "error", message: error.message || "Unable to generate invoices." });
     }
   }
 
   async function handleFilterSubmit(event) {
     event.preventDefault();
-    setStatus("");
     loadInvoices();
   }
 
@@ -99,7 +102,6 @@ export default function BillingPage() {
       </table>
 
       {!invoices.length && <p className="empty">No invoices for this month yet.</p>}
-      {status && <p className="empty">{status}</p>}
     </section>
   );
 }

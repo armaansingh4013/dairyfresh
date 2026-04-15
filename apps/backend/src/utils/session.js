@@ -11,6 +11,7 @@ function encodeBase64(value) {
   
     return {
       id: user.id,
+      username: user.username,
       role: user.role,
       phone: user.phone,
       email: user.email,

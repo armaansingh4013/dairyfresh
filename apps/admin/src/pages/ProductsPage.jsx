@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPatch, apiPost } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,7 @@ export default function ProductsPage() {
     isActive: true
   });
   const [status, setStatus] = useState("");
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadProducts();
@@ -40,11 +42,15 @@ export default function ProductsPage() {
 
     const price = Number(productForm.price);
     if (!productForm.name.trim()) {
-      setStatus("Product name is required.");
+      const message = "Product name is required.";
+      setStatus(message);
+      notify({ type: "error", message });
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      setStatus("Enter a valid price.");
+      const message = "Enter a valid price.";
+      setStatus(message);
+      notify({ type: "error", message });
       return;
     }
 
@@ -57,10 +63,13 @@ export default function ProductsPage() {
         imageUrl: productForm.imageUrl.trim() || undefined
       });
       setStatus("Product saved.");
+      notify({ type: "success", message: "Product saved." });
       setProductForm({ name: "", description: "", unit: "L", price: "", imageUrl: "" });
       loadProducts();
-    } catch {
-      setStatus("Unable to save product.");
+    } catch (error) {
+      const message = error.message || "Unable to save product.";
+      setStatus(message);
+      notify({ type: "error", message });
     }
   }
 
@@ -79,11 +88,15 @@ export default function ProductsPage() {
   async function saveEdit(productId) {
     const price = Number(editForm.price);
     if (!editForm.name.trim()) {
-      setStatus("Product name is required.");
+      const message = "Product name is required.";
+      setStatus(message);
+      notify({ type: "error", message });
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      setStatus("Enter a valid price.");
+      const message = "Enter a valid price.";
+      setStatus(message);
+      notify({ type: "error", message });
       return;
     }
 
@@ -97,10 +110,13 @@ export default function ProductsPage() {
         isActive: editForm.isActive
       });
       setStatus("Product updated.");
+      notify({ type: "success", message: "Product updated." });
       setEditingProductId(null);
       loadProducts();
-    } catch {
-      setStatus("Unable to update product.");
+    } catch (error) {
+      const message = error.message || "Unable to update product.";
+      setStatus(message);
+      notify({ type: "error", message });
     }
   }
 

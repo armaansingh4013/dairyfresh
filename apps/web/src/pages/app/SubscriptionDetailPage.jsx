@@ -190,9 +190,12 @@ export default function SubscriptionDetailPage({ user }) {
     try {
       await apiPost(`/plans/${plan.id}/days`, { days: daysPayload });
       setStatus("Subscription updated.");
+      notify({ type: "success", message: "Subscription updated." });
       loadPlan();
-    } catch {
-      setStatus("Unable to update subscription.");
+    } catch (error) {
+      const message = error.message || "Unable to update subscription.";
+      setStatus(message);
+      notify({ type: "error", message });
     }
   }
 
@@ -202,9 +205,12 @@ export default function SubscriptionDetailPage({ user }) {
     try {
       await apiPatch(`/plans/${plan.id}`, { status: "CANCELLED" });
       setStatus("Subscription cancelled.");
+      notify({ type: "success", message: "Subscription cancelled." });
       navigate("/app/subscriptions");
-    } catch {
-      setStatus("Unable to cancel subscription.");
+    } catch (error) {
+      const message = error.message || "Unable to cancel subscription.";
+      setStatus(message);
+      notify({ type: "error", message });
     }
   }
 

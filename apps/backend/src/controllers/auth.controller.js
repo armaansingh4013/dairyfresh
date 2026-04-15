@@ -59,11 +59,8 @@
 //   });
 // }
 
-
-
-
-import { ensureCoreDemoData, ensureDemoCustomerData } from "../services/demo.service.js";
 import {
+  authenticateOperationalUser,
   findUserByEmail,
   findUserByPhone,
   getUserById,
@@ -73,13 +70,32 @@ import {
 } from "../services/auth.service.js";
 import { badRequest, notFound } from "../utils/response.js";
 import { createSessionToken, readSessionToken, sanitizeUser } from "../utils/session.js";
-import { requestOtpSchema, verifyOtpSchema } from "../validations/auth.validation.js";
+import {
+  requestOtpSchema,
+  staffLoginSchema,
+  verifyOtpSchema
+} from "../validations/auth.validation.js";
+
+export async function loginStaff(req, res) {
+  const parsed = staffLoginSchema.safeParse(req.body);
+  if (!parsed.success) throw badRequest("Invalid username or password");
+
+  const user = await authenticateOperationalUser(parsed.data);
+  if (!user) {
+    const error = new Error("Invalid username or password");
+    error.status = 401;
+    throw error;
+  }
+
+  res.json({
+    token: createSessionToken(user),
+    user: sanitizeUser(user)
+  });
+}
 
 export async function requestOtp(req, res) {
   const parsed = requestOtpSchema.safeParse(req.body);
   if (!parsed.success) throw badRequest("Invalid phone/email");
-
-  await ensureCoreDemoData();
 
 console.log('====================================');
 console.log('Requesting OTP for:', parsed.data);
@@ -119,8 +135,6 @@ export async function verifyOtp(req, res) {
   const parsed = verifyOtpSchema.safeParse(req.body);
   if (!parsed.success) throw badRequest("Invalid payload");
 
-  await ensureCoreDemoData();
-
   if (parsed.data.email) {
     const localDemoUser = parsed.data.email.endsWith("@dairy.local")
       ? await findUserByEmail(parsed.data.email)
@@ -151,10 +165,6 @@ export async function verifyOtp(req, res) {
       throw error;
     }
 
-    if (verified.user.role === "CUSTOMER") {
-      await ensureDemoCustomerData(verified.user);
-    }
-
     return res.json({
       token: createSessionToken(verified.user),
       user: sanitizeUser(verified.user)
@@ -172,10 +182,6 @@ export async function verifyOtp(req, res) {
     phone: parsed.data.phone,
     name: parsed.data.name
   });
-
-  if (!existingUser && user.role === "CUSTOMER") {
-    await ensureDemoCustomerData(user);
-  }
 
   res.json({
     token: createSessionToken(user),

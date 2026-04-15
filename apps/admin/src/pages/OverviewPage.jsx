@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -10,6 +11,7 @@ export default function OverviewPage() {
   const [deliveries, setDeliveries] = useState([]);
   const [activePlans, setActivePlans] = useState([]);
   const [routeStatus, setRouteStatus] = useState("");
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadDeliveries();
@@ -40,9 +42,15 @@ export default function OverviewPage() {
     try {
       const res = await apiPost("/admin/deliveries/generate", {});
       setRouteStatus(`Route sheet generated. ${res.created || 0} deliveries prepared.`);
+      notify({
+        type: "success",
+        message: `Route sheet generated. ${res.created || 0} deliveries prepared.`
+      });
       loadDeliveries();
-    } catch {
-      setRouteStatus("Unable to generate route sheet.");
+    } catch (error) {
+      const message = error.message || "Unable to generate route sheet.";
+      setRouteStatus(message);
+      notify({ type: "error", message });
     }
   }
 

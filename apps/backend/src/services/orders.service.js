@@ -1,5 +1,5 @@
 import { Order, Product, User, Plan } from "../models/index.js";
-import { toDateOnly } from "../utils/date.js";
+import { endOfDay, startOfDay, toDateOnly, toDateKey } from "../utils/date.js";
 
 async function validateAddress(user, addressId) {
   return user.addresses.id(addressId) || null;
@@ -124,6 +124,37 @@ export async function listUserOrders(userId) {
 export async function listPlanOrders(planId) {
   const orders = await Order.find({ planId }).sort({ createdAt: -1 });
   return Promise.all(orders.map((order) => hydrateOrder(order)));
+}
+
+export async function updateOrderStatus(orderId, status) {
+  const order = await Order.findById(orderId);
+  if (!order) return null;
+
+  order.status = status;
+  await order.save();
+
+  return hydrateOrder(order);
+}
+
+export async function scheduleTodaysPlacedOrders(date = new Date()) {
+  const start = startOfDay(date);
+  const end = endOfDay(date);
+
+  const result = await Order.updateMany(
+    {
+      date: { $gte: start, $lte: end },
+      status: "PLACED"
+    },
+    {
+      $set: { status: "SCHEDULED" }
+    }
+  );
+
+  return {
+    dateKey: toDateKey(date),
+    matchedCount: Number(result.matchedCount || 0),
+    modifiedCount: Number(result.modifiedCount || 0)
+  };
 }
 
 

@@ -18,7 +18,7 @@ import Badge from "../components/Badge";
 import BottomNav from "../components/BottomNav";
 import Card from "../components/Card";
 import LoginScreen from "../features/auth/LoginScreen";
-import { apiGetCached, apiPatch, apiPost, invalidateCache } from "../services/api";
+import { apiGetCached, apiPost, invalidateCache } from "../services/api";
 import {
   clearCart,
   clearSession,
@@ -36,7 +36,7 @@ const tabs = [
   { key: "profile", label: "Me", icon: "P" }
 ];
 
-const subscriptionTabs = ["active", "cancelled", "completed", "history"];
+const subscriptionTabs = ["active", "completed"];
 const subscriptionOrderTabs = ["today", "upcoming", "completed"];
 const emptyAddressForm = {
   title: "",
@@ -70,8 +70,6 @@ export default function MobileApp() {
   const [toast, setToast] = useState(null);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [creatingSubscription, setCreatingSubscription] = useState(false);
-  const [savingPlanDays, setSavingPlanDays] = useState(false);
-  const [cancellingPlan, setCancellingPlan] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
 
   const userId = session?.user?.id || null;
@@ -306,37 +304,6 @@ export default function MobileApp() {
     }
   }
 
-  async function handleSavePlanDays(planId, days) {
-    setSavingPlanDays(true);
-    try {
-      await apiPost(`/plans/${planId}/days`, { days }, session.token);
-      await invalidateCache([`plans:${userId}`]);
-      await refreshAppData(session, { force: true });
-      showToast("Subscription updated.", "success");
-    } catch (error) {
-      showToast(error.message || "Unable to update subscription.", "error");
-      Alert.alert("Unable to update subscription", error.message);
-    } finally {
-      setSavingPlanDays(false);
-    }
-  }
-
-  async function handleCancelPlan(planId) {
-    setCancellingPlan(true);
-    try {
-      await apiPatch(`/plans/${planId}`, { status: "CANCELLED" }, session.token);
-      await invalidateCache([`plans:${userId}`, `orders:${userId}`]);
-      await refreshAppData(session, { force: true });
-      showToast("Subscription cancelled.", "success");
-      closeView();
-    } catch (error) {
-      showToast(error.message || "Unable to cancel subscription.", "error");
-      Alert.alert("Unable to cancel subscription", error.message);
-    } finally {
-      setCancellingPlan(false);
-    }
-  }
-
   async function handleSaveAddress(form, options = {}) {
     if (!userId) return null;
 
@@ -477,7 +444,6 @@ export default function MobileApp() {
             cartItems,
             cartTotal,
             onAddAddress: handleSaveAddress,
-            onCancelPlan: handleCancelPlan,
             onChangeTab: setActiveTab,
             onCreateSubscription: handleCreateSubscription,
             onLogout: handleLogout,
@@ -485,7 +451,6 @@ export default function MobileApp() {
             onOpenWizard: () => openView("subscriptionWizard"),
             onPlaceOrder: handlePlaceOrder,
             onRefresh: () => refreshAppData(session, { force: true }),
-            onSavePlanDays: handleSavePlanDays,
             onShowOrderSubscription: (planId) =>
               setActiveView({
                 name: "subscriptionDetail",
@@ -498,11 +463,9 @@ export default function MobileApp() {
             placingOrder,
             products,
             savingAddress,
-            savingPlanDays,
             session,
             subscriptions,
-            creatingSubscription,
-            cancellingPlan
+            creatingSubscription
           })}
         </View>
         {activeView.name === "root" ? (
@@ -548,12 +511,8 @@ function renderContent(props) {
   if (activeView.name === "subscriptionDetail") {
     return (
       <SubscriptionDetailScreen
-        cancellingPlan={props.cancellingPlan}
-        onCancelPlan={props.onCancelPlan}
-        onSavePlanDays={props.onSavePlanDays}
         orders={props.ordersByPlanId[props.activeView.params.plan?.id] || []}
         plan={props.activeView.params.plan}
-        savingPlanDays={props.savingPlanDays}
       />
     );
   }
@@ -840,94 +799,38 @@ function SubscriptionsScreen({ groups, onOpenSubscription, onOpenWizard }) {
         </Card>
 
         <TabRow tabs={subscriptionTabs} activeTab={activeTab} onChange={setActiveTab} />
-        {activeTab === "history" ? (
-          <View style={styles.stack}>
-            {visible.length ? (
-              visible.map((group) => (
-                <Card key={group.key}>
+        <View style={styles.stack}>
+          {visible.length ? (
+            visible.map((plan) => (
+              <Pressable key={plan.id} onPress={() => onOpenSubscription(plan)}>
+                <Card>
                   <View style={styles.summaryRow}>
-                    <Text style={styles.cardTitle}>{group.label}</Text>
-                    <Badge>{group.items.length} delivered</Badge>
-                  </View>
-                  <View style={styles.stack}>
-                    {group.items.map((item) => (
-                      <View key={item.id} style={styles.listRow}>
-                        <View style={styles.flexOne}>
-                          <Text style={styles.cardTitle}>{item.productName}</Text>
-                          <Text style={styles.cardBody}>
-                            {item.quantity} {item.unit}
-                          </Text>
-                        </View>
-                        <Text style={styles.cardBody}>{item.address || item.planMode}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </Card>
-              ))
-            ) : (
-              <EmptyCard message="No subscription history yet." />
-            )}
-          </View>
-        ) : (
-          <View style={styles.stack}>
-            {visible.length ? (
-              visible.map((plan) => (
-                <Pressable key={plan.id} onPress={() => onOpenSubscription(plan)}>
-                  <Card>
-                    <View style={styles.summaryRow}>
-                      <View style={styles.flexOne}>
-                        <Text style={styles.cardTitle}>{plan.product?.name || "Product"}</Text>
-                        <Text style={styles.cardBody}>
-                          {formatDate(plan.startDate)} to {formatDate(plan.endDate)}
-                        </Text>
-                      </View>
-                      <Badge>{plan.status}</Badge>
+                    <View style={styles.flexOne}>
+                      <Text style={styles.cardTitle}>{plan.product?.name || "Product"}</Text>
+                      <Text style={styles.cardBody}>
+                        {formatDate(plan.startDate)} to {formatDate(plan.endDate)}
+                      </Text>
                     </View>
-                    <Text style={styles.cardBody}>Mode: {plan.mode}</Text>
-                  </Card>
-                </Pressable>
-              ))
-            ) : (
-              <EmptyCard message={`No ${activeTab} subscriptions.`} />
-            )}
-          </View>
-        )}
+                    <Badge>{plan.status}</Badge>
+                  </View>
+                  <Text style={styles.cardBody}>Mode: {plan.mode}</Text>
+                  <Text style={styles.cardBody}>
+                    Delivered orders: {(plan.deliveries || []).filter((delivery) => delivery.status === "DELIVERED").length}
+                  </Text>
+                </Card>
+              </Pressable>
+            ))
+          ) : (
+            <EmptyCard message={`No ${activeTab} subscriptions.`} />
+          )}
+        </View>
       </ScrollView>
     </AnimatedScreen>
   );
 }
 
-function SubscriptionDetailScreen({ cancellingPlan, onCancelPlan, onSavePlanDays, orders, plan, savingPlanDays }) {
+function SubscriptionDetailScreen({ orders, plan }) {
   const [tab, setTab] = useState("today");
-  const [draftDays, setDraftDays] = useState(() => normalizePlanDays(plan?.days));
-
-  useEffect(() => {
-    setDraftDays(normalizePlanDays(plan?.days));
-  }, [plan]);
-
-  const calendar = useMemo(() => {
-    if (!plan) return [];
-    const start = new Date(plan.startDate);
-    const end = new Date(plan.endDate);
-    const days = [];
-    const cursor = new Date(start);
-
-    while (cursor <= end) {
-      const key = formatDateKey(cursor);
-      const override = draftDays[key];
-      const baseQuantity = plan.mode === "CUSTOM" ? 0 : Number(plan.defaultQuantity || 0);
-      days.push({
-        key,
-        date: key,
-        quantity: Number(override?.quantity ?? baseQuantity),
-        status: override?.status || "PENDING"
-      });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-
-    return days;
-  }, [draftDays, plan]);
-
   const visibleOrders = useMemo(() => filterPlanOrdersByTab(orders, tab), [orders, tab]);
 
   if (!plan) {
@@ -947,6 +850,9 @@ function SubscriptionDetailScreen({ cancellingPlan, onCancelPlan, onSavePlanDays
             </View>
             <Badge>{plan.status}</Badge>
           </View>
+          <Text style={styles.cardBody}>
+            {plan.address ? formatAddress(plan.address) : "No delivery address set"}
+          </Text>
           <Text style={styles.cardBody}>Default quantity: {plan.defaultQuantity}</Text>
           <Text style={styles.cardBody}>Mode: {plan.mode}</Text>
         </Card>
@@ -973,55 +879,6 @@ function SubscriptionDetailScreen({ cancellingPlan, onCancelPlan, onSavePlanDays
             ) : (
               <EmptyCard message={`No ${tab} orders for this subscription.`} />
             )}
-          </View>
-        </Card>
-
-        <Card>
-          <Text style={styles.sectionTitle}>Calendar</Text>
-          <View style={styles.calendarGrid}>
-            {calendar.map((day) => (
-              <Pressable
-                key={day.key}
-                style={[styles.calendarDay, day.quantity === 0 && styles.calendarDayMuted]}
-                onPress={() =>
-                  setDraftDays((current) => ({
-                    ...current,
-                    [day.key]: {
-                      ...(current[day.key] || {}),
-                      quantity: day.quantity === 0 ? Math.max(1, Number(plan.defaultQuantity || 1)) : 0
-                    }
-                  }))
-                }
-              >
-                <Text style={styles.calendarDate}>{new Date(day.date).getDate()}</Text>
-                <Text style={styles.calendarMeta}>{day.quantity === 0 ? "Off" : `Qty ${day.quantity}`}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={styles.heroActions}>
-            <ActionButton
-              onPress={() =>
-                onSavePlanDays(
-                  plan.id,
-                  Object.entries(draftDays).map(([date, value]) => ({
-                    date,
-                    quantity: Number(value.quantity || 0)
-                  }))
-                )
-              }
-              loading={savingPlanDays}
-              loadingLabel="Saving changes..."
-            >
-              Save Changes
-            </ActionButton>
-            <ActionButton
-              tone="ghost"
-              onPress={() => onCancelPlan(plan.id)}
-              loading={cancellingPlan}
-              loadingLabel="Cancelling..."
-            >
-              Cancel Subscription
-            </ActionButton>
           </View>
         </Card>
       </ScrollView>
@@ -1688,61 +1545,19 @@ function normalizeProducts(data) {
   }));
 }
 
-function normalizePlanDays(days) {
-  if (!days) return {};
-  if (Array.isArray(days)) {
-    return Object.fromEntries(days.map((day) => [formatDateKey(day.date), day]));
-  }
-  return days;
-}
-
 function buildSubscriptionGroups(plans) {
   const list = Array.isArray(plans) ? plans : [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const active = list.filter((plan) => plan.status === "ACTIVE");
-  const cancelled = list.filter((plan) => plan.status === "CANCELLED");
   const completed = list.filter(
     (plan) => plan.status !== "CANCELLED" && new Date(plan.endDate) < today
   );
 
-  const deliveredItems = list.flatMap((plan) =>
-    (plan.deliveries || [])
-      .filter((delivery) => delivery.status === "DELIVERED")
-      .map((delivery) => ({
-        id: delivery.id,
-        key: formatDateKey(delivery.date),
-        label: formatDate(delivery.date),
-        productName: delivery.product?.name || plan.product?.name || "Product",
-        quantity: delivery.quantity,
-        unit: delivery.product?.unit || plan.product?.unit || "L",
-        address: delivery.address
-          ? `${delivery.address.line1}, ${delivery.address.city}`
-          : null,
-        planMode: plan.mode
-      }))
-  );
-
-  const historyMap = deliveredItems.reduce((acc, item) => {
-    if (!acc[item.key]) {
-      acc[item.key] = {
-        key: item.key,
-        label: item.label,
-        items: []
-      };
-    }
-    acc[item.key].items.push(item);
-    return acc;
-  }, {});
-
-  const history = Object.values(historyMap).sort((a, b) => new Date(b.key) - new Date(a.key));
-
   return {
     active,
-    cancelled,
-    completed,
-    history
+    completed
   };
 }
 
@@ -1753,14 +1568,15 @@ function filterPlanOrdersByTab(orders, tab) {
   return (orders || []).filter((order) => {
     const orderDate = new Date(order.date);
     orderDate.setHours(0, 0, 0, 0);
+    const isCompleted = order.status === "COMPLETED";
 
     if (tab === "today") {
-      return orderDate.getTime() === today.getTime() && order.status !== "DELIVERED";
+      return orderDate.getTime() === today.getTime();
     }
     if (tab === "upcoming") {
-      return orderDate.getTime() > today.getTime() && order.status !== "DELIVERED";
+      return orderDate.getTime() > today.getTime() && !isCompleted;
     }
-    return order.status === "DELIVERED" || orderDate.getTime() < today.getTime();
+    return isCompleted;
   });
 }
 

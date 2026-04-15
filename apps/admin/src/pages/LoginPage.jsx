@@ -1,58 +1,46 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 export default function LoginPage({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  async function requestOtp() {
-    if (!email.trim()) {
-      setStatus("Enter email first.");
-      return;
-    }
-
-    setLoading(true);
-    setStatus("");
-    try {
-      const payload = await apiPost("/auth/request-otp", { email: email.trim() });
-      setOtpSent(true);
-      setStatus(payload.message || "OTP sent. Demo OTP is 1111 for @dairy.local users.");
-    } catch (error) {
-      setStatus(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { notify } = useNotifications();
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!email.trim() || !otp.trim()) {
-      setStatus("Enter email and OTP.");
+    if (!username.trim() || !password.trim()) {
+      const message = "Enter username and password.";
+      setStatus(message);
+      notify({ type: "error", message });
       return;
     }
 
     setLoading(true);
     setStatus("");
     try {
-      const payload = await apiPost("/auth/verify-otp", {
-        email: email.trim(),
-        otp: otp.trim()
+      const payload = await apiPost("/auth/staff-login", {
+        username: username.trim(),
+        password: password.trim()
       });
 
       if (!["ADMIN", "DELIVERY"].includes(payload.user?.role)) {
-        setStatus("Only admin and delivery users can sign in here.");
+        const message = "Only admin and delivery users can sign in here.";
+        setStatus(message);
+        notify({ type: "error", message });
         return;
       }
 
       onLogin(payload);
+      notify({ type: "success", message: "Logged in successfully." });
       navigate(payload.user.role === "DELIVERY" ? "/delivery" : "/overview", { replace: true });
     } catch (error) {
       setStatus(error.message);
+      notify({ type: "error", message: error.message || "Unable to sign in." });
     } finally {
       setLoading(false);
     }
@@ -64,36 +52,32 @@ export default function LoginPage({ onLogin }) {
         <p className="section-kicker">Secure Access</p>
         <h1>Admin Dashboard Login</h1>
         <p className="status-text">
-          Demo users: admin@dairy.local and delivery@dairy.local. Demo OTP: 1111.
+          Demo logins: admin / admin123 and delivery / delivery123.
         </p>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label>
-            <span>Email</span>
+            <span>Username</span>
             <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@dairy.local"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="admin"
             />
           </label>
 
-          <button type="button" onClick={requestOtp} disabled={loading}>
-            {loading && !otpSent ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}
-          </button>
-
           <label>
-            <span>OTP</span>
+            <span>Password</span>
             <input
-              type="text"
-              value={otp}
-              onChange={(event) => setOtp(event.target.value)}
-              placeholder="1111"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter password"
             />
           </label>
 
           <button type="submit" disabled={loading}>
-            {loading && otpSent ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Login"}
           </button>
           {status ? <p className="empty">{status}</p> : null}
         </form>

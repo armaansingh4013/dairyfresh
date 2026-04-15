@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { Product, Plan, Payment, Invoice, User, Delivery } from "../models/index.js";
 import { addDays, toDateOnly, toDateKey } from "../utils/date.js";
 import { upsertDeliveryRecord, recalculatePlanStats } from "./deliveries.service.js";
+import { hashPassword } from "./password.service.js";
 
 const DEMO_PRODUCTS = [
   {
@@ -69,23 +70,32 @@ export async function ensureCoreDemoData() {
 async function ensureOperationalDemoUsers() {
   const demoUsers = [
     {
+      username: "admin",
       email: "admin@dairy.local",
       name: "Admin User",
       role: "ADMIN",
-      isEmailVerified: true
+      isEmailVerified: true,
+      password: "admin123"
     },
     {
+      username: "delivery",
       email: "delivery@dairy.local",
       name: "Delivery User",
       role: "DELIVERY",
-      isEmailVerified: true
+      isEmailVerified: true,
+      password: "delivery123"
     }
   ];
 
   for (const payload of demoUsers) {
     const existing = await User.findOne({ email: payload.email });
+    const passwordHash = await hashPassword(payload.password);
     if (existing) {
       let changed = false;
+      if (existing.username !== payload.username) {
+        existing.username = payload.username;
+        changed = true;
+      }
       if (existing.role !== payload.role) {
         existing.role = payload.role;
         changed = true;
@@ -98,13 +108,24 @@ async function ensureOperationalDemoUsers() {
         existing.isEmailVerified = true;
         changed = true;
       }
+      if (!existing.passwordHash) {
+        existing.passwordHash = passwordHash;
+        changed = true;
+      }
       if (changed) {
         await existing.save();
       }
       continue;
     }
 
-    await User.create(payload);
+    await User.create({
+      username: payload.username,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+      isEmailVerified: payload.isEmailVerified,
+      passwordHash
+    });
   }
 
   const deliveryUser = await User.findOne({ role: "DELIVERY" }).select("_id");

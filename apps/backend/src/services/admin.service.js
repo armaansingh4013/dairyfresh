@@ -1,5 +1,5 @@
 import { Delivery, Invoice, Order, Plan, User } from "../models/index.js";
-import { endOfDay, sameDate, startOfDay } from "../utils/date.js";
+import { addDays, endOfDay, sameDate, startOfDay } from "../utils/date.js";
 import { notFound } from "../utils/response.js";
 
 function formatAddress(address) {
@@ -135,6 +135,128 @@ export async function listAdminDailyDeliveries(date = new Date()) {
           : null
     };
   });
+}
+
+export async function listAdminOrders(scope = "today", date = new Date()) {
+  const todayStart = startOfDay(date);
+  const todayEnd = endOfDay(date);
+  const tomorrowStart = startOfDay(addDays(todayStart, 1));
+
+  const filter = {};
+
+  if (scope === "completed") {
+    filter.status = "COMPLETED";
+  } else if (scope === "upcoming") {
+    filter.date = { $gte: tomorrowStart };
+    filter.status = { $nin: ["CANCELLED", "COMPLETED"] };
+  } else {
+    filter.date = { $gte: todayStart, $lte: todayEnd };
+    filter.status = { $ne: "CANCELLED" };
+  }
+
+  const orders = await Order.find(filter)
+    .sort(scope === "completed" ? { date: -1, createdAt: -1 } : { date: 1, createdAt: 1 })
+    .select("userId addressId type planId date status items createdAt")
+    .populate({
+      path: "userId",
+      select: "name phone email addresses"
+    })
+    .populate({
+      path: "planId",
+      select: "startDate endDate status"
+    })
+    .populate({
+      path: "items.productId",
+      select: "name unit price"
+    })
+    .lean();
+
+  return orders
+    .filter((order) => !order.planId || order.planId.status !== "CANCELLED")
+    .map((order) => {
+      const mappedOrder = mapOrderSummary(order);
+
+      return {
+        ...mappedOrder,
+        customer: mapUserSummary(order.userId),
+        plan:
+          order.planId && order.planId.status !== "CANCELLED"
+            ? {
+                id: order.planId._id.toString(),
+                startDate: order.planId.startDate,
+                endDate: order.planId.endDate,
+                status: order.planId.status
+              }
+            : null
+      };
+    });
+}
+
+function mapDeliverySummary(delivery) {
+  const address =
+    delivery.userId?.addresses?.find(
+      (entry) => String(entry._id) === String(delivery.addressId || "")
+    ) || null;
+  const quantity = Number(delivery.quantity || 0);
+  const unitPrice = Number(delivery.productId?.price || 0);
+
+  return {
+    id: delivery._id.toString(),
+    date: delivery.date,
+    status: delivery.status,
+    quantity,
+    amountToCollect: Number((quantity * unitPrice).toFixed(2)),
+    customer: {
+      id: delivery.userId?._id?.toString?.() || null,
+      name: delivery.userId?.name || "Customer",
+      phone: delivery.userId?.phone || "",
+      email: delivery.userId?.email || ""
+    },
+    product: {
+      id: delivery.productId?._id?.toString?.() || null,
+      name: delivery.productId?.name || "Product",
+      unit: delivery.productId?.unit || "",
+      price: unitPrice
+    },
+    address: formatAddress(address),
+    plan: delivery.planId
+      ? {
+          id: delivery.planId?._id?.toString?.() || null,
+          status: delivery.planId?.status || null,
+          startDate: delivery.planId?.startDate || null,
+          endDate: delivery.planId?.endDate || null
+        }
+      : null
+  };
+}
+
+export async function listAdminDeliveries(scope = "today", date = new Date()) {
+  const todayStart = startOfDay(date);
+  const todayEnd = endOfDay(date);
+  const tomorrowStart = startOfDay(addDays(todayStart, 1));
+
+  const filter = {};
+
+  if (scope === "completed") {
+    filter.status = "DELIVERED";
+  } else if (scope === "upcoming") {
+    filter.date = { $gte: tomorrowStart };
+    filter.status = { $nin: ["CANCELLED", "DELIVERED"] };
+  } else {
+    filter.date = { $gte: todayStart, $lte: todayEnd };
+    filter.status = { $ne: "CANCELLED" };
+  }
+
+  const deliveries = await Delivery.find(filter)
+    .sort(scope === "completed" ? { date: -1, createdAt: -1 } : { date: 1, createdAt: 1 })
+    .populate("userId", "name phone email addresses")
+    .populate("productId", "name unit price")
+    .populate("planId", "startDate endDate status")
+    .lean();
+
+  return deliveries
+    .filter((delivery) => !delivery.planId || delivery.planId.status !== "CANCELLED")
+    .map((delivery) => mapDeliverySummary(delivery));
 }
 
 export async function listAdminSubscriptions(includeCancelled = false) {

@@ -60,6 +60,7 @@ const AddressSchema = new Schema(
 
 const UserSchema = new Schema(
   {
+    username: { type: String, unique: true, sparse: true },
     phone: { type: String, unique: true, sparse: true },
     email: { type: String, unique: true, sparse: true },
     name: String,
@@ -77,7 +78,8 @@ const UserSchema = new Schema(
       enum: ["EMAIL", "PHONE", null],
       default: null
     },
-    isEmailVerified: { type: Boolean, default: false }
+    isEmailVerified: { type: Boolean, default: false },
+    passwordHash: { type: String, default: null }
   },
   { timestamps: true }
 );

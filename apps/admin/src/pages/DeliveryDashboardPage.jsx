@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { apiGet, apiPatch } from "../services/api.js";
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 function formatCurrency(value) {
   return `INR ${Number(value || 0).toFixed(2)}`;
@@ -12,6 +13,7 @@ export default function DeliveryDashboardPage() {
   const [todayDeliveries, setTodayDeliveries] = useState([]);
   const [delivered, setDelivered] = useState([]);
   const [status, setStatus] = useState("");
+  const { notify } = useNotifications();
 
   useEffect(() => {
     loadData();
@@ -36,9 +38,12 @@ export default function DeliveryDashboardPage() {
     try {
       await apiPatch(`/deliveries/${deliveryId}`, { status: "DELIVERED" });
       setStatus("Delivery marked as delivered.");
+      notify({ type: "success", message: "Delivery marked as delivered." });
       loadData();
     } catch (error) {
-      setStatus(error.message || "Unable to update delivery.");
+      const message = error.message || "Unable to update delivery.";
+      setStatus(message);
+      notify({ type: "error", message });
     }
   }
 
@@ -67,7 +72,7 @@ export default function DeliveryDashboardPage() {
       </div>
 
       <section className="sheet">
-        <table>
+        <table className="responsive-table">
           <thead>
             <tr>
               <th>Customer</th>
@@ -83,21 +88,21 @@ export default function DeliveryDashboardPage() {
           <tbody>
             {list.map((delivery) => (
               <tr key={delivery.id}>
-                <td>{delivery.customer?.name || "Customer"}</td>
-                <td>{delivery.customer?.phone || "-"}</td>
-                <td>
+                <td data-label="Customer">{delivery.customer?.name || "Customer"}</td>
+                <td data-label="Phone">{delivery.customer?.phone || "-"}</td>
+                <td data-label="Address">
                   {delivery.address
                     ? `${delivery.address.line1 || ""}, ${delivery.address.city || ""}`
                     : "Address"}
                 </td>
-                <td>{delivery.product?.name || "Product"}</td>
-                <td>
+                <td data-label="Product">{delivery.product?.name || "Product"}</td>
+                <td data-label="Qty">
                   {delivery.quantity} {delivery.product?.unit || ""}
                 </td>
-                <td>{formatCurrency(delivery.amountToCollect)}</td>
-                <td>{delivery.status}</td>
+                <td data-label="Amount">{formatCurrency(delivery.amountToCollect)}</td>
+                <td data-label="Status">{delivery.status}</td>
                 {activeTab === "today" ? (
-                  <td>
+                  <td data-label="Action">
                     <button type="button" onClick={() => markDelivered(delivery.id)}>
                       Mark Delivered
                     </button>

@@ -10,8 +10,11 @@ import CustomersPage from "../pages/CustomersPage.jsx";
 import CustomerDetailPage from "../pages/CustomerDetailPage.jsx";
 import BillingPage from "../pages/BillingPage.jsx";
 import ReportsPage from "../pages/ReportsPage.jsx";
+import UsersPage from "../pages/UsersPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
 import DeliveryDashboardPage from "../pages/DeliveryDashboardPage.jsx";
+import ToastViewport from "../components/ToastViewport.jsx";
+import { NotificationProvider } from "../contexts/NotificationContext.jsx";
 import {
   apiGet,
   clearStoredSession,
@@ -33,6 +36,7 @@ function ProtectedApp({ session, onLogout }) {
             <Route path="/subscriptions/:planId" element={<SubscriptionDetailPage />} />
             <Route path="/deliveries" element={<DeliveriesPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
             <Route path="/billing" element={<BillingPage />} />
@@ -113,13 +117,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      {session?.user ? (
-        <ProtectedApp session={session} onLogout={handleLogout} />
-      ) : (
-        <Routes>
-          <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
-        </Routes>
-      )}
+      <NotificationProvider>
+        {session?.user ? (
+          <ProtectedApp session={session} onLogout={handleLogout} />
+        ) : (
+          <Routes>
+            <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+          </Routes>
+        )}
+        <ToastViewport />
+      </NotificationProvider>
     </BrowserRouter>
   );
 }
